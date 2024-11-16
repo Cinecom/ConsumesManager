@@ -1,0 +1,57 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+    <Button name="ConsumesTracker_MinimapButton" hidden="false" enableMouse="true" parent="Minimap" toplevel="true" movable="true">
+    
+        <HighlightTexture alphaMode="ADD" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight"/>
+        <Size>
+            <AbsDimension x="32" y="32"/>
+        </Size>
+        <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="Minimap" relativePoint="TOPLEFT">
+                <Offset>
+                    <AbsDimension x="0" y="0"/>
+                </Offset>
+            </Anchor>
+        </Anchors>
+        <Layers>
+            <Layer level="OVERLAY">
+                <Texture name="ConsumesTracker_MinimapIconTexture" file="Interface\AddOns\ConsumesTracker\images\minimap_icon">
+                    <Size>
+                        <AbsDimension x="24" y="24"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="CENTER">
+                            <Offset>
+                                <AbsDimension x="0" y="0"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+            </Layer>
+        </Layers>
+        
+        <Scripts>
+            <OnLoad>
+                ConsumesTracker_OnLoad(this);
+            </OnLoad>
+            <OnDragStart>
+                ConsumesTracker_OnDragStart(this);
+            </OnDragStart>
+            <OnDragStop>
+                ConsumesTracker_OnDragStop(this);
+            </OnDragStop>
+            <OnMouseDown>
+                 ConsumesTracker_HandleClick(self, arg1);
+            </OnMouseDown>
+            <OnEnter>
+                GameTooltip:SetOwner(this, "ANCHOR_LEFT");
+                GameTooltip:SetText("Consumes Tracker");
+                GameTooltip:AddLine("|cff00ff00Left Click|r to open tracker", 1, 1, 1);
+                GameTooltip:AddLine("Shift + Click to drag", 0.5, 0.5, 0.5);
+                GameTooltip:Show();
+            </OnEnter>
+            <OnLeave>
+                GameTooltip:Hide();
+            </OnLeave>
+        </Scripts>
+    </Button>
+</Ui>
