@@ -2,7 +2,7 @@
 
 -- Metadata -------------------------------------------------------------------------------------------
 AddonName = "Consumes Tracker"
-Version = "1.2"
+Version = "1.3"
 VState = "multi character (beta)"
 WindowWidth = 310
 
@@ -222,15 +222,21 @@ function ConsumeTracker_CreateMainWindow()
     end
 
     -- Tracker Tab
-    local tab1 = CreateTab("ConsumeTracker_MainFrameTab1", "Interface\\ICONS\\INV_Potion_93", 30, "Consumables Tracker", 1)
+    local tab1 = CreateTab("ConsumeTracker_MainFrameTab1", "Interface\\Icons\\INV_Potion_93", 30, "Consumables Tracker", 1)
     tab1:SetScript("OnClick", function()
         ConsumeTracker_ShowTab(1)
     end)
 
     -- Options Tab
-    local tab2 = CreateTab("ConsumeTracker_MainFrameTab2", "Interface\\ICONS\\INV_Misc_Gear_01", 80, "Options", 2)
+    local tab2 = CreateTab("ConsumeTracker_MainFrameTab2", "Interface\\Icons\\INV_Misc_Gear_01", 80, "Options", 2)
     tab2:SetScript("OnClick", function()
         ConsumeTracker_ShowTab(2)
+    end)
+
+    -- Characters Tab
+    local tab3 = CreateTab("ConsumeTracker_MainFrameTab3", "Interface\\Icons\\Ability_Rogue_Disguise", 130, "Characters", 3)
+    tab3:SetScript("OnClick", function()
+        ConsumeTracker_ShowTab(3)
     end)
 
     -- Add Grey Line Under Tabs
@@ -254,6 +260,12 @@ function ConsumeTracker_CreateMainWindow()
     tab2Content:SetHeight(380)
     tab2Content:SetPoint("TOPLEFT", ConsumeTracker_MainFrame, "TOPLEFT", 30, -80)
     ConsumeTracker_MainFrame.tabs[2] = tab2Content
+
+    local tab3Content = CreateFrame("Frame", nil, ConsumeTracker_MainFrame)
+    tab3Content:SetWidth(WindowWidth - 50)
+    tab3Content:SetHeight(380)
+    tab3Content:SetPoint("TOPLEFT", ConsumeTracker_MainFrame, "TOPLEFT", 30, -80)
+    ConsumeTracker_MainFrame.tabs[3] = tab3Content
 
     -- Footer Text
     local footerText = ConsumeTracker_MainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -288,6 +300,7 @@ function ConsumeTracker_CreateMainWindow()
     -- Add Custom Content for Tabs
     ConsumeTracker_CreateTrackerContent(tab1Content)
     ConsumeTracker_CreateOptionsContent(tab2Content)
+    ConsumeTracker_CreateCharactersContent(tab3Content)
 end
 
 
@@ -469,7 +482,6 @@ function ConsumeTracker_CreateTrackerContent(parentFrame)
     ConsumeTracker_UpdateTrackerScrollBar()
 end
 
-
 -- Function to create the content of the Options tab
 function ConsumeTracker_CreateOptionsContent(parentFrame)
     -- Scroll Frame
@@ -563,6 +575,16 @@ function ConsumeTracker_CreateOptionsContent(parentFrame)
             optionFrame:SetScript("OnMouseDown", function()
                 checkbox:Click()
             end)
+
+            -- Mouseover Tooltip
+            optionFrame:SetScript("OnEnter", function()
+                ConsumeTracker_ShowOptionsTooltip(currentItemID)
+            end)
+            optionFrame:SetScript("OnLeave", function()
+                if ConsumeTracker_OptionsTooltip then
+                    ConsumeTracker_OptionsTooltip:Hide()
+                end
+            end)
         end
 
         -- Add some spacing after each category
@@ -597,6 +619,160 @@ function ConsumeTracker_CreateOptionsContent(parentFrame)
     -- Update the scrollbar
     ConsumeTracker_UpdateOptionsScrollBar()
 end
+
+function ConsumeTracker_CreateCharactersContent(parentFrame)
+    -- Scroll Frame
+    local scrollFrame = CreateFrame("ScrollFrame", "ConsumeTracker_CharactersScrollFrame", parentFrame)
+    scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, 0)
+    scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -20, 0)
+    scrollFrame:EnableMouseWheel(true)
+    scrollFrame:SetScript("OnMouseWheel", function()
+        local delta = arg1
+        local current = scrollFrame:GetVerticalScroll()
+        local maxScroll = scrollFrame.maxScroll or 0
+        local newScroll = math.max(0, math.min(current - (delta * 20), maxScroll))
+        scrollFrame:SetVerticalScroll(newScroll)
+        if parentFrame.scrollBar then
+            parentFrame.scrollBar:SetValue(newScroll)
+        end
+    end)
+
+    -- Scroll Child Frame
+    local scrollChild = CreateFrame("Frame", nil, scrollFrame)
+    scrollChild:SetWidth(WindowWidth - 10)
+    scrollChild:SetHeight(1)
+    scrollFrame:SetScrollChild(scrollChild)
+
+    -- Initialize variables
+    parentFrame.checkboxes = {}
+    local index = 0 -- Position index
+
+    -- Ensure settings table for characters exists
+    ConsumeTracker_Settings["Characters"] = ConsumeTracker_Settings["Characters"] or {}
+
+    -- Get list of characters
+    local realmName = GetRealmName()
+    local faction = UnitFactionGroup("player")
+    local playerName = UnitName("player")
+
+    local characterList = {}
+
+    -- Ensure data structure exists
+    if ConsumeTracker_Data[realmName] and ConsumeTracker_Data[realmName][faction] then
+        for characterName, _ in pairs(ConsumeTracker_Data[realmName][faction]) do
+            table.insert(characterList, characterName)
+        end
+    end
+
+    -- Ensure current character is included
+    local playerInList = false
+    for _, name in ipairs(characterList) do
+        if name == playerName then
+            playerInList = true
+            break
+        end
+    end
+    if not playerInList then
+        table.insert(characterList, playerName)
+    end
+
+    -- Sort the character list
+    table.sort(characterList)
+
+    -- Create FontString for title
+    local title = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, 0) -- Offset from the top
+    title:SetText("Select Characters to Track")
+    title:SetTextColor(1, 1, 1)
+
+    -- Offset index to start below the title
+    local startYOffset = 20
+
+    -- For each character
+    for _, characterName in ipairs(characterList) do
+        index = index + 1
+
+        -- Create a local copy of characterName for the closure
+        local currentCharacterName = characterName
+
+        -- Create a frame that encompasses the checkbox and label
+        local optionFrame = CreateFrame("Frame", "ConsumeTracker_CharacterFrame" .. index, scrollChild)
+        optionFrame:SetWidth(WindowWidth - 10)
+        optionFrame:SetHeight(18)
+        optionFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -(startYOffset + (index - 1) * 20))
+
+        -- Create the checkbox inside the optionFrame
+        local checkbox = CreateFrame("CheckButton", "ConsumeTracker_CharacterCheckbox" .. index, optionFrame)
+        checkbox:SetWidth(16)
+        checkbox:SetHeight(16)
+        checkbox:SetPoint("LEFT", optionFrame, "LEFT", 0, 0)
+
+        -- Create Textures for the checkbox
+        checkbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
+        checkbox:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down")
+        checkbox:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
+        checkbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
+
+        -- Create FontString for label
+        local label = optionFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
+        label:SetText(currentCharacterName)
+
+        -- Set up the checkbox OnClick handler
+        checkbox:SetScript("OnClick", function()
+            if checkbox:GetChecked() then
+                ConsumeTracker_Settings["Characters"][currentCharacterName] = true
+            else
+                ConsumeTracker_Settings["Characters"][currentCharacterName] = false
+            end
+            ConsumeTracker_UpdateTrackerContent()
+        end)
+        -- Load saved setting
+        if ConsumeTracker_Settings["Characters"][currentCharacterName] == nil then
+            -- Default to checked
+            checkbox:SetChecked(true)
+            ConsumeTracker_Settings["Characters"][currentCharacterName] = true
+        else
+            checkbox:SetChecked(ConsumeTracker_Settings["Characters"][currentCharacterName])
+        end
+        parentFrame.checkboxes[currentCharacterName] = checkbox
+
+        -- Make the optionFrame clickable (so clicking on the label checks/unchecks the box)
+        optionFrame:EnableMouse(true)
+        optionFrame:SetScript("OnMouseDown", function()
+            checkbox:Click()
+        end)
+    end
+
+    -- Adjust the scroll child height
+    scrollChild.contentHeight = startYOffset + index * 20
+    scrollChild:SetHeight(scrollChild.contentHeight)
+
+    -- Scroll Bar
+    local scrollBar = CreateFrame("Slider", "ConsumeTracker_CharactersScrollBar", parentFrame)
+    scrollBar:SetPoint("TOPRIGHT", parentFrame, "TOPRIGHT", -2, -16)
+    scrollBar:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -2, 16)
+    scrollBar:SetWidth(16)
+    scrollBar:SetOrientation('VERTICAL')
+    scrollBar:SetThumbTexture("Interface\\Buttons\\UI-ScrollBar-Knob")
+    scrollBar:SetBackdrop({
+        bgFile = "Interface\\Buttons\\UI-SliderBar-Background",
+        edgeFile = "Interface\\Buttons\\UI-SliderBar-Border",
+        tile = true, tileSize = 8, edgeSize = 8,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    scrollBar:SetScript("OnValueChanged", function()
+        local value = scrollBar:GetValue()
+        scrollFrame:SetVerticalScroll(value)
+    end)
+    parentFrame.scrollBar = scrollBar
+    parentFrame.scrollFrame = scrollFrame
+    parentFrame.scrollChild = scrollChild
+
+    -- Update the scrollbar
+    ConsumeTracker_UpdateCharactersScrollBar()
+end
+
 
 function ConsumeTracker_UpdateTrackerContent()
     if not ConsumeTracker_MainFrame or not ConsumeTracker_MainFrame.tabs or not ConsumeTracker_MainFrame.tabs[1] then
@@ -671,6 +847,9 @@ function ConsumeTracker_UpdateTrackerContent()
         categoryLabel:Hide()
     end
 
+    -- Ensure character settings exist
+    ConsumeTracker_Settings["Characters"] = ConsumeTracker_Settings["Characters"] or {}
+
     -- Iterate over categories
     for _, categoryName in ipairs(sortedCategories) do
         local consumables = consumablesCategories[categoryName]
@@ -700,13 +879,15 @@ function ConsumeTracker_UpdateTrackerContent()
                 hasAnyVisibleItems = true  -- Set to true when an item is displayed
                 totalCounts[itemID] = 0  -- Initialize count
 
-                -- Sum counts across all characters
+                -- Sum counts across all selected characters
                 for character, charData in pairs(data) do
-                    -- Ensure charData["inventory"], ["bank"], ["mail"] are initialized
-                    local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
-                    local bank = charData["bank"] and charData["bank"][itemID] or 0
-                    local mail = charData["mail"] and charData["mail"][itemID] or 0
-                    totalCounts[itemID] = totalCounts[itemID] + inventory + bank + mail
+                    if ConsumeTracker_Settings["Characters"][character] == true then
+                        -- Proceed with counting
+                        local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
+                        local bank = charData["bank"] and charData["bank"][itemID] or 0
+                        local mail = charData["mail"] and charData["mail"][itemID] or 0
+                        totalCounts[itemID] = totalCounts[itemID] + inventory + bank + mail
+                    end
                 end
 
                 -- Show and position item label
@@ -787,7 +968,6 @@ end
 
 
 
-
 function ConsumeTracker_UpdateTrackerScrollBar()
     local trackerFrame = ConsumeTracker_MainFrame.tabs[1]
     local scrollBar = trackerFrame.scrollBar
@@ -813,7 +993,6 @@ end
 
 
 
--- Function to update the options scrollbar
 function ConsumeTracker_UpdateOptionsScrollBar()
     local optionsFrame = ConsumeTracker_MainFrame.tabs[2]
     local scrollBar = optionsFrame.scrollBar
@@ -836,6 +1015,31 @@ function ConsumeTracker_UpdateOptionsScrollBar()
         scrollBar:Hide()
     end
 end
+
+
+function ConsumeTracker_UpdateCharactersScrollBar()
+    local charactersFrame = ConsumeTracker_MainFrame.tabs[3]
+    local scrollBar = charactersFrame.scrollBar
+    local scrollFrame = charactersFrame.scrollFrame
+    local scrollChild = charactersFrame.scrollChild
+
+    local totalHeight = scrollChild.contentHeight
+    local shownHeight = 320  -- Adjust based on your UI
+
+    local maxScroll = math.max(0, totalHeight - shownHeight)
+    scrollFrame.maxScroll = maxScroll
+
+    if totalHeight > shownHeight then
+        scrollBar:SetMinMaxValues(0, maxScroll)
+        scrollBar:SetValue(math.min(scrollBar:GetValue(), maxScroll))
+        scrollBar:Show()
+    else
+        scrollBar:SetMinMaxValues(0, 0)
+        scrollBar:SetValue(0)
+        scrollBar:Hide()
+    end
+end
+
 
 function ConsumeTracker_ShowConsumableTooltip(itemID)
     -- Ensure item is enabled in settings
@@ -869,7 +1073,15 @@ function ConsumeTracker_ShowConsumableTooltip(itemID)
         title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, -2)
         title:SetPoint("RIGHT", tooltipFrame, "RIGHT", -10, 0)
         title:SetJustifyH("LEFT")
+        title:SetTextColor(1,1,1)
         tooltipFrame.title = title
+
+        -- Item Total
+        local total = tooltipFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        total:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, -20)
+        total:SetPoint("RIGHT", tooltipFrame, "RIGHT", -10, 0)
+        total:SetJustifyH("LEFT")
+        tooltipFrame.total = total
 
         -- Content text
         local content = tooltipFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -885,8 +1097,8 @@ function ConsumeTracker_ShowConsumableTooltip(itemID)
 
     -- Get item info
     local itemName = consumablesList[itemID] or "Unknown Item"
-    local itemTexture = consumablesTextures[itemID] or "Interface\\Icons\\INV_Misc_QuestionMark"
-
+    local itemTexture = consumablesTexture[itemID] or "Interface\\Icons\\INV_Misc_QuestionMark"
+    
     -- Set icon and title
     tooltipFrame.icon:SetTexture(itemTexture)
     tooltipFrame.title:SetText(itemName)
@@ -909,45 +1121,61 @@ function ConsumeTracker_ShowConsumableTooltip(itemID)
     local hasItems = false
     local characterList = {}
 
+    -- Ensure character settings exist
+    ConsumeTracker_Settings["Characters"] = ConsumeTracker_Settings["Characters"] or {}
+
     -- Collect data for each character
     for character, charData in pairs(data) do
-        local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
-        local bank = charData["bank"] and charData["bank"][itemID] or 0
-        local mail = charData["mail"] and charData["mail"][itemID] or 0
-        local total = inventory + bank + mail
+        if ConsumeTracker_Settings["Characters"][character] == true then
+            local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
+            local bank = charData["bank"] and charData["bank"][itemID] or 0
+            local mail = charData["mail"] and charData["mail"][itemID] or 0
+            local total = inventory + bank + mail
 
-        if total > 0 then
-            hasItems = true
-            totalInventory = totalInventory + inventory
-            totalBank = totalBank + bank
-            totalMail = totalMail + mail
+            if total > 0 then
+                hasItems = true
+                totalInventory = totalInventory + inventory
+                totalBank = totalBank + bank
+                totalMail = totalMail + mail
 
-            table.insert(characterList, {
-                name = character,
-                inventory = inventory,
-                bank = bank,
-                mail = mail,
-                total = total,
-                isPlayer = (character == playerName)
-            })
+                table.insert(characterList, {
+                    name = character,
+                    inventory = inventory,
+                    bank = bank,
+                    mail = mail,
+                    total = total,
+                    isPlayer = (character == playerName)
+                })
+            end
         end
     end
 
     local totalItems = totalInventory + totalBank + totalMail
+    -- Adjust label color based on count
+    if totalItems == 0 then
+        tooltipFrame.total:SetTextColor(1, 0, 0)  -- Red
+    elseif totalItems < 10 then
+        tooltipFrame.total:SetTextColor(1, 0.4, 0)  -- Orange
+    elseif totalItems <= 20 then
+        tooltipFrame.total:SetTextColor(1, 0.85, 0)  -- Yellow
+    else
+        tooltipFrame.total:SetTextColor(0, 1, 0)  -- Green
+    end
+
+    tooltipFrame.total:SetText("Total: " .. totalItems)
 
     if not hasItems then
         contentText = contentText .. "|cffff0000No items found for this consumable.|r"
     else
-        -- Display total counts at the top
-        contentText = contentText .. "|cffffff00Total:|r " .. totalItems .. "\n\n"
 
         -- Sort characters alphabetically (optional)
         table.sort(characterList, function(a, b) return a.name < b.name end)
 
         -- Display data for each character
         for _, charInfo in ipairs(characterList) do
-            local nameColor = charInfo.isPlayer and "|cff00ff00" or "|cffcccccc"  -- Green for player, grey for others
-            contentText = contentText .. nameColor .. charInfo.name .. ": " .. charInfo.total .. "|r\n"
+
+            local nameColor = charInfo.isPlayer and "|cff00ff00" or "|cffffffff"  -- Green for player, grey for others
+            contentText = contentText .. nameColor .. charInfo.name .. " (" .. charInfo.total .. ")|r\n"
 
             local detailText = ""
             if charInfo.inventory > 0 then
@@ -959,6 +1187,7 @@ function ConsumeTracker_ShowConsumableTooltip(itemID)
             if charInfo.mail > 0 then
                 detailText = detailText .. "|cffffffffMail:|r " .. charInfo.mail .. "  "
             end
+
             contentText = contentText .. "  " .. detailText .. "\n\n"
         end
     end
@@ -987,7 +1216,112 @@ function ConsumeTracker_ShowConsumableTooltip(itemID)
 end
 
 
+function ConsumeTracker_ShowOptionsTooltip(itemID)
+    -- Set the maximum width for the description text
+    local maxDescriptionWidth = 160
 
+    -- Create or reuse the tooltip frame
+    if not ConsumeTracker_OptionsTooltip then
+        -- Create the frame
+        local tooltipFrame = CreateFrame("Frame", "ConsumeTracker_OptionsTooltip", UIParent)
+        tooltipFrame:SetFrameStrata("TOOLTIP")
+        tooltipFrame:SetBackdrop({
+            bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile = true, tileSize = 16, edgeSize = 16,
+            insets = { left = 4, right = 4, top = 4, bottom = 4 }
+        })
+        tooltipFrame:SetBackdropColor(0, 0, 0, 1)
+
+        -- Item icon
+        local icon = tooltipFrame:CreateTexture(nil, "ARTWORK")
+        icon:SetWidth(32)
+        icon:SetHeight(32)
+        icon:SetPoint("TOPLEFT", tooltipFrame, "TOPLEFT", 10, -10)
+        tooltipFrame.icon = icon
+
+        -- Item name
+        local title = tooltipFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, -2)
+        title:SetJustifyH("LEFT")
+        tooltipFrame.title = title
+
+        -- Item description
+        local description = tooltipFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        description:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, -16)
+        description:SetWidth(maxDescriptionWidth)
+        description:SetJustifyH("LEFT")
+        description:SetTextColor(1, 1, 1)
+        tooltipFrame.description = description
+
+        ConsumeTracker_OptionsTooltip = tooltipFrame
+    end
+
+    local tooltipFrame = ConsumeTracker_OptionsTooltip
+
+    -- Get item info
+    local itemName = consumablesList[itemID] or "Unknown Item"
+    local itemTexture = consumablesTexture[itemID] or "Interface\\Icons\\INV_Misc_QuestionMark"
+    local itemDescription = consumablesDescription[itemID] or ""
+
+    -- Function to add line breaks manually
+    local function WrapText(text, maxWidth, fontObject)
+        local wrappedText = ""
+        local currentLine = ""
+        local space = " "
+        local testString = tooltipFrame:CreateFontString(nil, "OVERLAY", fontObject)
+        testString:SetWidth(0)
+        testString:SetHeight(0)
+        testString:Hide() -- We don't need to display this
+
+        -- Replace \n with spaces to avoid unintended line breaks
+        text = string.gsub(text, "\n", " ")
+
+        -- Split the text into words
+        for word in string.gfind(text, "%S+") do
+            local testLine = currentLine == "" and word or (currentLine .. space .. word)
+            testString:SetText(testLine)
+            if testString:GetStringWidth() > maxWidth then
+                wrappedText = wrappedText == "" and currentLine or (wrappedText .. "\n" .. currentLine)
+                currentLine = word
+            else
+                currentLine = testLine
+            end
+        end
+        wrappedText = wrappedText == "" and currentLine or (wrappedText .. "\n" .. currentLine)
+        return wrappedText
+    end
+
+    -- Wrap the description text
+    local wrappedDescription = WrapText(itemDescription, maxDescriptionWidth, "GameFontNormalSmall")
+
+    -- Set icon, title, and description
+    tooltipFrame.icon:SetTexture(itemTexture)
+    tooltipFrame.title:SetText(itemName)
+    tooltipFrame.description:SetText(wrappedDescription)
+
+    -- Calculate the number of lines in the wrapped description
+    local _, lineCount = string.gsub(wrappedDescription, "\n", "")
+    lineCount = lineCount + 1 -- Add 1 for the last line
+
+    -- Set the heights for the description and the tooltip frame
+    local lineHeight = 12
+    tooltipFrame.description:SetHeight(lineCount * lineHeight)
+
+    local totalHeight = 50 + (lineCount * lineHeight)
+    tooltipFrame:SetHeight(totalHeight)
+
+    -- Set the width of the tooltip
+    local maxWidth = math.max(tooltipFrame.title:GetStringWidth() + 70, tooltipFrame.description:GetStringWidth() + 70)
+    tooltipFrame:SetWidth(maxWidth)
+
+    -- Position the tooltip near the cursor
+    local x, y = GetCursorPosition()
+    local scale = UIParent:GetEffectiveScale()
+    tooltipFrame:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x / scale + 10, y / scale - 10)
+
+    tooltipFrame:Show()
+end
 
 
 
