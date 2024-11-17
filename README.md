@@ -3,4 +3,5 @@ Tracks your inventory, bank and mail for consumables. Works through multiple cha
 
 Currently in beta! Needs testing!
 
-<img width="532" alt="image" src="https://github.com/user-attachments/assets/160d7361-da85-40fa-b8c9-98a3590f1d21">
+<img width="521" alt="image" src="https://github.com/user-attachments/assets/6079b4f4-b286-4fde-b235-27eaf3fda764">
+
