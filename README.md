@@ -1,5 +1,3 @@
-## KNOWN BUGS: Some items are not tracked | Some icons are wrong | Lots of consumes missing - Updating this in the upcoming days
-
 # ConsumesTracker
 Created with ♥ by Horyoshi for World of Warcraft 1.12 Turtle WoW
 Tracks your inventory, bank and mail for consumables. Works through multiple characters on the same account.
