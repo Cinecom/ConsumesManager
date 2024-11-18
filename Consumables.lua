@@ -78,6 +78,9 @@ consumablesCategories = {
         { id = 18270, name = "Power Mushroom", texture = "Interface\\Icons\\INV_Mushroom_11", description = "Increases 20 Strength for 15 minutes" },
         { id = 21151, name = "Rumsey Rum Black Label", texture = "Interface\\Icons\\INV_Drink_04", description = "Increases Stamina by 15 for 15 minutes." },
         { id = 12218, name = "Monster Omelet", texture = "Interface\\Icons\\INV_Misc_Food_06", description = "Increases 12 Stamina and 12 Spirit for 15 minutes." },
+        { id = 60977, name = "Danonzo's Tel'Abim Delight", texture = "Interface\\Icons\\INV_Misc_Food_06", description = "Gain 22 spell damage for 15 minutes." },
+        { id = 60978, name = "Danonzo's Tel'Abim Medley", texture = "Interface\\Icons\\INV_Misc_Food_07", description = "Increase haste by 2% for 15 minutes." },
+        { id = 60976, name = "Danonzo's Tel'Abim Surprise", texture = "Interface\\Icons\\INV_Misc_Food_09", description = "Gain 45 Ranged Attack Power for 15 minutes." },
     },
     ["Special Buffs"] = {
         { id = 12451, name = "Juju Power", texture = "Interface\\Icons\\INV_Misc_MonsterScales_11", description = "Increases Strength by 30 for 30 minutes." },
