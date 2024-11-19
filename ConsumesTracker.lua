@@ -2,7 +2,7 @@
 
 -- Metadata -------------------------------------------------------------------------------------------
 AddonName = "Consumes Tracker"
-Version = "1.3"
+Version = "1.4"
 VState = "multi character (beta)"
 WindowWidth = 310
 
@@ -111,6 +111,8 @@ function ConsumeTracker_CreateMainWindow()
         this:StopMovingOrSizing()
     end)
 
+    table.insert(UISpecialFrames, "ConsumeTracker_MainFrame")
+
     -- Background Texture
     local background = ConsumeTracker_MainFrame:CreateTexture(nil, "BACKGROUND")
     background:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Background")
@@ -126,17 +128,21 @@ function ConsumeTracker_CreateMainWindow()
     })
     ConsumeTracker_MainFrame:SetBackdropColor(0.1, 0.1, 0.1, 1)
 
-    -- Title Frame
+    -- Title Text
+    local titleText = ConsumeTracker_MainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    titleText:SetText(AddonName)
+    titleText:SetPoint("TOP", ConsumeTracker_MainFrame, "TOP", 0, -2)
+
+    -- Calculate the width of the title text and adjust the title background accordingly
+    local titleWidth = titleText:GetStringWidth() + 160 
+
+    -- Title Background
     local titleBg = ConsumeTracker_MainFrame:CreateTexture(nil, "ARTWORK")
     titleBg:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
-    titleBg:SetWidth(266)
+    titleBg:SetWidth(titleWidth)
     titleBg:SetHeight(64)
     titleBg:SetPoint("TOP", ConsumeTracker_MainFrame, "TOP", 0, 12)
 
-    -- Title Text
-    local titleText = ConsumeTracker_MainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    titleText:SetText("Consumes Tracker")
-    titleText:SetPoint("TOP", titleBg, "TOP", 0, -14)
 
     -- Close Button
     local closeButton = CreateFrame("Button", nil, ConsumeTracker_MainFrame, "UIPanelCloseButton")
@@ -482,11 +488,100 @@ function ConsumeTracker_CreateTrackerContent(parentFrame)
     ConsumeTracker_UpdateTrackerScrollBar()
 end
 
--- Function to create the content of the Options tab
 function ConsumeTracker_CreateOptionsContent(parentFrame)
-    -- Scroll Frame
+    -- Create Search Input
+    local searchBox = CreateFrame("EditBox", "ConsumeTracker_SearchBox", parentFrame, "InputBoxTemplate")
+    searchBox:SetWidth(WindowWidth - 50)
+    searchBox:SetHeight(20)
+    searchBox:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -5)
+    searchBox:SetAutoFocus(false)
+    searchBox:SetText("Search...")
+    searchBox:SetTextColor(0.5, 0.5, 0.5) -- Placeholder text color
+
+    searchBox:SetScript("OnEditFocusGained", function()
+        if this:GetText() == "Search..." then
+            this:SetText("")
+            this:SetTextColor(1, 1, 1) -- User input text color
+        end
+    end)
+
+    searchBox:SetScript("OnEditFocusLost", function()
+        if this:GetText() == "" then
+            this:SetText("Search...")
+            this:SetTextColor(0.5, 0.5, 0.5) -- Placeholder text color
+        end
+    end)
+
+    -- Function to update the filter
+    local function UpdateFilter()
+        local filterText = string.lower(searchBox:GetText())
+        if filterText == "search..." then filterText = "" end
+        local index = 0 -- Position index
+        local lineHeight = 18
+
+        -- Iterate over categories
+        for _, categoryInfo in ipairs(parentFrame.categoryInfo) do
+            local categoryLabel = categoryInfo.label
+            local anyOptionVisible = false
+
+            -- First, check if any options in the category match the filter
+            for _, optionInfo in ipairs(categoryInfo.options) do
+                local itemNameLower = string.lower(optionInfo.name)
+
+                if filterText == "" or string.find(itemNameLower, filterText, 1, true) then
+                    anyOptionVisible = true
+                    break
+                end
+            end
+
+            -- If any options are visible, show the category label
+            if anyOptionVisible then
+                categoryLabel:SetPoint("TOPLEFT", parentFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
+                categoryLabel:Show()
+                index = index + 1
+
+                -- Now, position and show the matching options
+                for _, optionInfo in ipairs(categoryInfo.options) do
+                    local optionFrame = optionInfo.frame
+                    local itemNameLower = string.lower(optionInfo.name)
+
+                    if filterText == "" or string.find(itemNameLower, filterText, 1, true) then
+                        -- Show the option
+                        optionFrame:SetPoint("TOPLEFT", parentFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
+                        optionFrame:Show()
+                        index = index + 1
+                    else
+                        optionFrame:Hide()
+                    end
+                end
+
+                -- Add extra spacing after the category
+                index = index + 1  -- Add one extra line of spacing between categories
+
+            else
+                categoryLabel:Hide()
+                -- Hide all options under this category
+                for _, optionInfo in ipairs(categoryInfo.options) do
+                    optionInfo.frame:Hide()
+                end
+            end
+        end
+
+        -- Adjust the scroll child height
+        parentFrame.scrollChild.contentHeight = index * lineHeight
+        parentFrame.scrollChild:SetHeight(parentFrame.scrollChild.contentHeight)
+
+        -- Update the scrollbar
+        ConsumeTracker_UpdateOptionsScrollBar()
+    end
+
+    searchBox:SetScript("OnTextChanged", function()
+        UpdateFilter()
+    end)
+
+    -- Adjust the size of the scroll frame to make room for the search box and add extra spacing
     local scrollFrame = CreateFrame("ScrollFrame", "ConsumeTracker_OptionsScrollFrame", parentFrame)
-    scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, 0)
+    scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -40)  -- Changed from -30 to -50 for extra spacing
     scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -20, 0)
     scrollFrame:EnableMouseWheel(true)
     scrollFrame:SetScript("OnMouseWheel", function()
@@ -500,47 +595,55 @@ function ConsumeTracker_CreateOptionsContent(parentFrame)
 
     -- Scroll Child Frame
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-    scrollChild:SetWidth(WindowWidth-10)
+    scrollChild:SetWidth(WindowWidth - 10)
     scrollChild:SetHeight(1)  -- Will adjust later
     scrollFrame:SetScrollChild(scrollChild)
+    parentFrame.scrollChild = scrollChild
+    parentFrame.scrollFrame = scrollFrame
 
-    -- Sort categories alphabetically for consistent order
+    -- Sort categories alphabetically
     local sortedCategories = {}
     for categoryName, _ in pairs(consumablesCategories) do
         table.insert(sortedCategories, categoryName)
     end
-    table.sort(sortedCategories, function(a, b) return a < b end)
+    table.sort(sortedCategories)
 
     -- Checkboxes
     parentFrame.checkboxes = {}
+    parentFrame.categoryInfo = {}
     local index = 0 -- Position index
+    local lineHeight = 18
 
-    -- Iterate over sorted categories in tracker order
+    -- Iterate over sorted categories
     for _, categoryName in ipairs(sortedCategories) do
         local consumables = consumablesCategories[categoryName]
 
         -- Create category label
-        index = index + 1
         local categoryLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        categoryLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index - 1) * 18)
         categoryLabel:SetText(categoryName)
         categoryLabel:SetTextColor(1, 1, 1)
+        categoryLabel:Show()
+        
+        local categoryInfo = { name = categoryName, label = categoryLabel, options = {} }
+
+        index = index + 1  -- Position for the category label
+
+        local numOptionsInCategory = 0  -- Counter for options in this category
 
         -- Sort the consumables by name
         table.sort(consumables, function(a, b) return a.name < b.name end)
 
         -- For each consumable in the category
         for _, consumable in ipairs(consumables) do
-            index = index + 1
-
             local currentItemID = consumable.id
             local itemName = consumable.name
 
             -- Create a frame that encompasses the checkbox and label
             local optionFrame = CreateFrame("Frame", "ConsumeTracker_OptionsFrame" .. index, scrollChild)
-            optionFrame:SetWidth(WindowWidth-10)
-            optionFrame:SetHeight(18)
-            optionFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index - 1) * 18)
+            optionFrame:SetWidth(WindowWidth - 10)
+            optionFrame:SetHeight(lineHeight)
+            optionFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
+            optionFrame:Show()
 
             -- Create the checkbox inside the optionFrame
             local checkbox = CreateFrame("CheckButton", "ConsumeTracker_OptionsCheckbox" .. index, optionFrame)
@@ -570,7 +673,7 @@ function ConsumeTracker_CreateOptionsContent(parentFrame)
             end
             parentFrame.checkboxes[currentItemID] = checkbox
 
-            -- Make the optionFrame clickable (so clicking on the label checks/unchecks the box)
+            -- Make the optionFrame clickable
             optionFrame:EnableMouse(true)
             optionFrame:SetScript("OnMouseDown", function()
                 checkbox:Click()
@@ -585,19 +688,31 @@ function ConsumeTracker_CreateOptionsContent(parentFrame)
                     ConsumeTracker_OptionsTooltip:Hide()
                 end
             end)
+
+            -- Store option info
+            table.insert(categoryInfo.options, { frame = optionFrame, name = itemName })
+
+            index = index + 1  -- Increment index after adding option
+            numOptionsInCategory = numOptionsInCategory + 1  -- Increment options count
         end
 
-        -- Add some spacing after each category
-        index = index + 1
+        -- Position the category label above its options
+        categoryLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index - numOptionsInCategory - 1) * lineHeight)
+
+        -- Store category info
+        table.insert(parentFrame.categoryInfo, categoryInfo)
+
+        -- Add extra spacing after the category
+        index = index + 1  -- Add one extra line of spacing between categories
     end
 
     -- Adjust the scroll child height
-    scrollChild.contentHeight = index * 18
+    scrollChild.contentHeight = (index - 1) * lineHeight
     scrollChild:SetHeight(scrollChild.contentHeight)
 
     -- Scroll Bar
     local scrollBar = CreateFrame("Slider", "ConsumeTracker_OptionsScrollBar", parentFrame)
-    scrollBar:SetPoint("TOPRIGHT", parentFrame, "TOPRIGHT", -2, -16)
+    scrollBar:SetPoint("TOPRIGHT", parentFrame, "TOPRIGHT", -2, -56)  -- Adjusted for extra spacing
     scrollBar:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -2, 16)
     scrollBar:SetWidth(16)
     scrollBar:SetOrientation('VERTICAL')
@@ -613,12 +728,11 @@ function ConsumeTracker_CreateOptionsContent(parentFrame)
         parentFrame.scrollFrame:SetVerticalScroll(value)
     end)
     parentFrame.scrollBar = scrollBar
-    parentFrame.scrollFrame = scrollFrame
-    parentFrame.scrollChild = scrollChild
 
     -- Update the scrollbar
     ConsumeTracker_UpdateOptionsScrollBar()
 end
+
 
 function ConsumeTracker_CreateCharactersContent(parentFrame)
     -- Scroll Frame
@@ -1000,7 +1114,9 @@ function ConsumeTracker_UpdateOptionsScrollBar()
     local scrollChild = optionsFrame.scrollChild
 
     local totalHeight = scrollChild.contentHeight
-    local shownHeight = 320  -- Adjust based on your UI
+    local parentHeight = optionsFrame:GetHeight()
+    local searchBoxHeight = 36  -- Adjusted height including padding
+    local shownHeight = parentHeight - searchBoxHeight - 20
 
     local maxScroll = math.max(0, totalHeight - shownHeight)
     scrollFrame.maxScroll = maxScroll
@@ -1015,7 +1131,6 @@ function ConsumeTracker_UpdateOptionsScrollBar()
         scrollBar:Hide()
     end
 end
-
 
 function ConsumeTracker_UpdateCharactersScrollBar()
     local charactersFrame = ConsumeTracker_MainFrame.tabs[3]
@@ -1402,8 +1517,7 @@ end
 
 -- Function to scan player's mail
 function ConsumeTracker_ScanPlayerMail()
-      if not MailFrame or not MailFrame:IsShown() then
-
+    if not MailFrame or not MailFrame:IsShown() then
         return
     end
 
@@ -1421,7 +1535,6 @@ function ConsumeTracker_ScanPlayerMail()
     local numInboxItems = GetInboxNumItems()
     if numInboxItems and numInboxItems > 0 then
         for mailIndex = 1, numInboxItems do
-            local packageIcon, stationeryIcon, sender, subject, money, CODAmount, daysLeft = GetInboxHeaderInfo(mailIndex)
             local itemName, itemTexture, itemCount, itemQuality = GetInboxItem(mailIndex)
             if itemName and itemCount and itemCount > 0 then
                 -- Since GetInboxItemLink is not available, use itemName to get itemID
@@ -1435,3 +1548,4 @@ function ConsumeTracker_ScanPlayerMail()
 
     ConsumeTracker_UpdateTrackerContent()
 end
+
