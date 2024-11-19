@@ -75,7 +75,7 @@ consumablesCategories = {
         { id = 51711, name = "Sweet Mountain Berry (Agility)", texture = "Interface\\Icons\\INV_Misc_Food_40", description = "Increases Agility by 10 for 1 hour." },
         { id = 51714, name = "Sweet Mountain Berry (Stamina)", texture = "Interface\\Icons\\INV_Misc_Food_40", description = "Increases Stamina by 10 for 1 hour." },
         { id = 51717, name = "Hardened Mushroom", texture = "Interface\\Icons\\INV_Mushroom_11", description = "Increases 25 Stamina for 15 minutes" },
-        { id = 18270, name = "Power Mushroom", texture = "Interface\\Icons\\INV_Mushroom_11", description = "Increases 20 Strength for 15 minutes" },
+        { id = 51720, name = "Power Mushroom", texture = "Interface\\Icons\\INV_Mushroom_11", description = "Increases 20 Strength for 15 minutes" },
         { id = 21151, name = "Rumsey Rum Black Label", texture = "Interface\\Icons\\INV_Drink_04", description = "Increases Stamina by 15 for 15 minutes." },
         { id = 12218, name = "Monster Omelet", texture = "Interface\\Icons\\INV_Misc_Food_06", description = "Increases 12 Stamina and 12 Spirit for 15 minutes." },
         { id = 60977, name = "Danonzo's Tel'Abim Delight", texture = "Interface\\Icons\\INV_Misc_Food_06", description = "Gain 22 spell damage for 15 minutes." },
