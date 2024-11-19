@@ -22,9 +22,11 @@ Click the mini-map icon to open/close the Tracker
 ## Changelog
 
 **V1.4**
+```
 - Updated consumables list
 - Fixed icons and ID's for all consumables
 - Fixed an issue where the consumables counting could be a negative value
 - Added a search filter in the options window
 - Fixed general styling issues
 - You can now close the addon window by pressing 'Esc'
+```
