@@ -2,7 +2,7 @@
 ## Title: |cff00ff00Consumes Tracker|r |cff808080[Horyoshi]|r
 ## Notes: Tracks your inventory, bank and mail for consumables. Works through multiple characters on the same account.
 ## Author: Horyoshi
-## Version: 1.3
+## Version: 1.4
 ## SavedVariables: ConsumeTracker_Settings, ConsumeTracker_Data
 
 ConsumesTracker.lua
