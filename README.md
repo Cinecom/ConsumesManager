@@ -13,7 +13,6 @@ Click the mini-map icon to open/close the Tracker
 
 ## Future Features
 
-- Further expand/update the consumes list
 - Syncing across multiple accounts on the same server (bank alts)
 - View preset lists for your class for specific raids. (ie. shows list of consumes that a mage needs to bring to BWL)
 
