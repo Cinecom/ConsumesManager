@@ -14,7 +14,7 @@ consumablesCategories = {
         { id = 9179, name = "Elixir of Greater Intellect", texture = "Interface\\Icons\\INV_Potion_10", description = "Increases Intellect by 25 for 1 hour." },
         { id = 50237, name = "Elixir of Greater Nature Power", texture = "Interface\\Icons\\INV_Potion_22", description = "Increases nature spell damage by up to 55 for 1 hour." },
         { id = 3386, name = "Elixir of Poison Resistance", texture = "Interface\\Icons\\INV_Potion_12", description = "Imbiber is cured of up to four poisons up to level 60." },
-        { id = 9264, name = "Elixir of Poison Resistance", texture = "Interface\\Icons\\INV_Potion_46", description = "Increases spell shadow damage by up to 40 for 30 minutes." },
+        { id = 9264, name = "Elixir of Poison Power", texture = "Interface\\Icons\\INV_Potion_46", description = "Increases spell shadow damage by up to 40 for 30 minutes." },
         { id = 61224, name = "Dreamshard Elixir", texture = "Interface\\Icons\\INV_Potion_12", description = " Grants 2% spell critical and 15 spell power for 1 hour." },
     },
     ["Flasks"] = {
