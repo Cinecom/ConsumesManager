@@ -90,6 +90,7 @@ consumablesCategories = {
         { id = 12820, name = "Winterfall Firewater", texture = "Interface\\Icons\\INV_Potion_92", description = "Increases Attack Power by 35 for 20 minutes." },
         { id = 20079, name = "Spirit of Zanza", texture = "Interface\\Icons\\INV_Potion_30", description = "Increases the player's Spirit by 50 and Stamina by 50 for 2 hours." },
         { id = 20081, name = "Swiftness of Zanza", texture = "Interface\\Icons\\INV_Potion_30", description = "Increases the player's run speed by 20% for 2 hours." },
+        { id = 8412, name = "Ground Scorpok Assay", texture = "Interface\\Icons\\inv_misc_dust_02", description = "Increases Agility by 25 for 1 hour." },
     },
 }
 
