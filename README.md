@@ -4,9 +4,9 @@ Currently in beta and needs testing. Report bugs here: https://github.com/Cineco
 Tracks and manages consumables across your inventory, bank and mail through multiple characters. Keeps track of how much consumes you have left.
 Created with ♥ by Horyoshi for World of Warcraft 1.12 **Turtle WoW**
 
-<img width="767" alt="manager" src="https://github.com/user-attachments/assets/ddd03dd6-607f-41e1-b103-34cfe9edf721">
-<img width="494" alt="options" src="https://github.com/user-attachments/assets/dc29ede3-9dc8-4ba6-96cf-572d71cdcb5f">
-<img width="487" alt="characters" src="https://github.com/user-attachments/assets/44eec157-8060-4e96-bf14-ea5d25f35361">
+<img width="400" alt="manager" src="https://github.com/user-attachments/assets/ddd03dd6-607f-41e1-b103-34cfe9edf721">
+<img width="253" alt="options" src="https://github.com/user-attachments/assets/dc29ede3-9dc8-4ba6-96cf-572d71cdcb5f">
+<img width="253" alt="characters" src="https://github.com/user-attachments/assets/44eec157-8060-4e96-bf14-ea5d25f35361">
 
 ## How To
 
