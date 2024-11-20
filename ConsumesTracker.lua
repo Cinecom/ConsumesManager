@@ -2,7 +2,7 @@
 
 -- Metadata -------------------------------------------------------------------------------------------
 AddonName = "Consumes Tracker"
-Version = "1.4"
+Version = "1.4.1"
 VState = "multi character (beta)"
 WindowWidth = 310
 
