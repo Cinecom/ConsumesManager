@@ -22,6 +22,13 @@ Click the mini-map icon to open/close the Tracker
 
 ## Changelog
 
+**##V1.4.1**
+```
+- Can now be updated via the Turtle WoW launcher
+```
+<img width="680" alt="image" src="https://github.com/user-attachments/assets/07fbaeb2-fb67-463f-a743-a28db6d82adc">
+
+
 **V1.4**
 ```
 - Updated consumables list
