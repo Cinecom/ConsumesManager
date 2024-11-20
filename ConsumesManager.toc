@@ -1,0 +1,10 @@
+## Interface: 11200
+## Title: |cff00ff00Consumes Manager|r |cff808080[Horyoshi]|r
+## Notes: Tracks and manages consumables across your inventory, bank and mail through multiple characters. Keeps track of how much consumes you have left.
+## Author: Horyoshi
+## Version: 1.5
+## SavedVariables: ConsumesManager_Settings, ConsumesManager_Data
+
+Main.lua
+Itemlist.lua
+minimap_icon.xml
