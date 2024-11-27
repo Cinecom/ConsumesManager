@@ -65,7 +65,9 @@ consumablesCategories = {
         { id = 13462, name = "Purification Potion", texture = "Interface\\Icons\\INV_Potion_31", description = "Attempts to remove one Curse, one Disease and one Poison from the Imbiber." },
         { id = 13444, name = "Major Mana Potion", texture = "Interface\\Icons\\INV_Potion_76", description = "Restores 1350 to 2251 mana." }, 
         { id = 13446, name = "Major Healing Potion", texture = "Interface\\Icons\\INV_Potion_54", description = "Restores 1050 to 1751 health." }, 
-        { id = 7676, name = "Thistle Tea", texture = "Interface\\Icons\\INV_Drink_Milk_05", description = "Instantly restores 100 energy." }, 
+        { id = 7676, name = "Thistle Tea", texture = "Interface\\Icons\\INV_Drink_Milk_05", description = "Instantly restores 100 energy." },
+        { id = 20004, name = "Major Troll's Blood Potion", texture = "Interface\\Icons\\inv_potion_80", description = "Regenerate 20 health every 5 sec for 1 hour." },
+        { id = 14530, name = "Heavy Runecloth Bandage", texture = "Interface\\Icons\\inv_misc_bandage_12", description = "Heals 2000 damage over 8 sec." },
     },
     ["Food Buffs"] = {
         { id = 21023, name = "Dirge's Kickin' Chimaerok Chops", texture = "Interface\\Icons\\INV_Misc_Food_65", description = "Increases Strength by 25 for 1 hour." },
@@ -91,6 +93,7 @@ consumablesCategories = {
         { id = 20079, name = "Spirit of Zanza", texture = "Interface\\Icons\\INV_Potion_30", description = "Increases the player's Spirit by 50 and Stamina by 50 for 2 hours." },
         { id = 20081, name = "Swiftness of Zanza", texture = "Interface\\Icons\\INV_Potion_30", description = "Increases the player's run speed by 20% for 2 hours." },
         { id = 8412, name = "Ground Scorpok Assay", texture = "Interface\\Icons\\inv_misc_dust_02", description = "Increases Agility by 25 for 1 hour." },
+        { id = 8410, name = "R.O.I.D.S.", texture = "Interface\\Icons\\inv_stone_15", description = "Increases Strenght by 25 for 1 hour." },
     },
 }
 

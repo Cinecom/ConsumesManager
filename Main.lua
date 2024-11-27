@@ -1,7 +1,7 @@
 -- Metadata ---------------------------------------------------------------------------------------------
 AddonName = "Consumes Manager"
-Version = "1.5"
-VState = "beta"
+Version = "1.6"
+VState = "release"
 WindowWidth = 350
 
 -- Onload & Click Functionality -------------------------------------------------------------------------
@@ -151,7 +151,6 @@ function ConsumesManager_CreateMainWindow()
     titleBg:SetHeight(64)
     titleBg:SetPoint("TOP", ConsumesManager_MainFrame, "TOP", 0, 12)
 
-
     -- Close Button
     local closeButton = CreateFrame("Button", nil, ConsumesManager_MainFrame, "UIPanelCloseButton")
     closeButton:SetWidth(32)
@@ -163,7 +162,7 @@ function ConsumesManager_CreateMainWindow()
 
     -- Create a custom tooltip frame
     local tooltipFrame = CreateFrame("Frame", "ConsumesManagerTooltip", UIParent)
-    tooltipFrame:SetWidth(150)
+    tooltipFrame:SetWidth(100)
     tooltipFrame:SetHeight(40)
     tooltipFrame:SetFrameStrata("TOOLTIP")
     tooltipFrame:SetBackdrop({
@@ -236,19 +235,19 @@ function ConsumesManager_CreateMainWindow()
     end
 
     -- Manager Tab
-    local tab1 = CreateTab("ConsumesManager_MainFrameTab1", "Interface\\Icons\\INV_Potion_93", 30, "Consumables Manager", 1)
+    local tab1 = CreateTab("ConsumesManager_MainFrameTab1", "Interface\\AddOns\\ConsumesManager\\images\\minimap_icon", 30, "Tracker", 1)
     tab1:SetScript("OnClick", function()
         ConsumesManager_ShowTab(1)
     end)
 
-    -- Options Tab
-    local tab2 = CreateTab("ConsumesManager_MainFrameTab2", "Interface\\Icons\\INV_Misc_Gear_01", 80, "Options", 2)
+    -- Items Tab
+    local tab2 = CreateTab("ConsumesManager_MainFrameTab2", "Interface\\Icons\\Inv_misc_book_03", 80, "Items", 2)
     tab2:SetScript("OnClick", function()
         ConsumesManager_ShowTab(2)
     end)
 
-    -- Characters Tab
-    local tab3 = CreateTab("ConsumesManager_MainFrameTab3", "Interface\\Icons\\Ability_Rogue_Disguise", 130, "Characters", 3)
+    -- Options Tab
+    local tab3 = CreateTab("ConsumesManager_MainFrameTab3", "Interface\\Icons\\INV_Misc_Gear_01", 130, "Settings", 3)
     tab3:SetScript("OnClick", function()
         ConsumesManager_ShowTab(3)
     end)
@@ -313,9 +312,10 @@ function ConsumesManager_CreateMainWindow()
 
     -- Add Custom Content for Tabs
     ConsumesManager_CreateManagerContent(tab1Content)
-    ConsumesManager_CreateOptionsContent(tab2Content)
-    ConsumesManager_CreateCharactersContent(tab3Content)
+    ConsumesManager_CreateItemsContent(tab2Content)
+    ConsumesManager_CreateSettingsContent(tab3Content)
 end
+
 
 function ConsumesManager_ShowMainWindow()
     if not ConsumesManager_MainFrame then
@@ -335,6 +335,7 @@ function ConsumesManager_ShowMainWindow()
     ConsumesManager_UpdateManagerContent()
 end
 
+
 function ConsumesManager_ShowTab(tabIndex)
     if not ConsumesManager_MainFrame or not ConsumesManager_MainFrame.tabs then return end
     for i, tabContent in pairs(ConsumesManager_MainFrame.tabs) do
@@ -342,12 +343,12 @@ function ConsumesManager_ShowTab(tabIndex)
             tabContent:Show()
             -- Set the tab button to active
             local tabButton = getglobal("ConsumesManager_MainFrameTab" .. i)
-            tabButton:SetNormalTexture("Interface\\OptionsFrame\\UI-OptionsFrame-ActiveTab")
+            tabButton:SetNormalTexture("Interface\\ItemsFrame\\UI-ItemsFrame-ActiveTab")
         else
             tabContent:Hide()
             -- Set the tab button to inactive
             local tabButton = getglobal("ConsumesManager_MainFrameTab" .. i)
-            tabButton:SetNormalTexture("Interface\\OptionsFrame\\UI-OptionsFrame-InActiveTab")
+            tabButton:SetNormalTexture("Interface\\ItemsFrame\\UI-ItemsFrame-InActiveTab")
         end
     end
 end
@@ -400,11 +401,11 @@ function ConsumesManager_CreateManagerContent(parentFrame)
         categoryLabel:SetTextColor(1, 1, 1)
         categoryLabel:Show()
 
-        local categoryInfo = { name = categoryName, label = categoryLabel, options = {} }
+        local categoryInfo = { name = categoryName, label = categoryLabel, Items = {} }
 
         index = index + 1  -- Position for the category label
 
-        local numOptionsInCategory = 0  -- Counter for options in this category
+        local numItemsInCategory = 0  -- Counter for Items in this category
 
         -- Sort the consumables by name
         table.sort(consumables, function(a, b) return a.name < b.name end)
@@ -415,24 +416,36 @@ function ConsumesManager_CreateManagerContent(parentFrame)
             local itemName = consumable.name
 
             -- Create a frame that encompasses the button and label
-            local optionFrame = CreateFrame("Frame", "ConsumesManager_ManagerOptionFrame" .. index, scrollChild)
-            optionFrame:SetWidth(WindowWidth - 10)
-            optionFrame:SetHeight(lineHeight)
-            optionFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
-            optionFrame:Show()
-            optionFrame:EnableMouse(true)  -- Enable mouse events for OnEnter and OnLeave
+            local itemFrame = CreateFrame("Frame", "ConsumesManager_ManagerItemFrame" .. index, scrollChild)
+            itemFrame:SetWidth(WindowWidth - 10)
+            itemFrame:SetHeight(lineHeight)
+            itemFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
+            itemFrame:Show()
+            itemFrame:EnableMouse(true)  -- Enable mouse events for OnEnter and OnLeave
 
-            -- Create the 'Use' button inside the optionFrame
-            local useButton = CreateFrame("Button", "ConsumesManager_UseButton" .. index, optionFrame, "UIPanelButtonTemplate")
+            -- Create the 'Use' button inside the itemFrame
+            local useButton = CreateFrame("Button", "ConsumesManager_UseButton" .. index, itemFrame, "UIPanelButtonTemplate")
             useButton:SetWidth(40)
             useButton:SetHeight(16)
-            useButton:SetPoint("LEFT", optionFrame, "LEFT", 0, 0)
+            useButton:SetPoint("LEFT", itemFrame, "LEFT", 0, 0)
             useButton:SetText("Use")
 
+            -- Initially show or hide the use button based on settings
+            if ConsumesManager_Settings.showUseButton then
+                useButton:Show()
+            else
+                useButton:Hide()
+            end
+
             -- Create FontString for label
-            local label = optionFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            label:SetPoint("LEFT", useButton, "RIGHT", 4, 0)
+            local label = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            if ConsumesManager_Settings.showUseButton then
+                label:SetPoint("LEFT", useButton, "RIGHT", 4, 0)
+            else
+                label:SetPoint("LEFT", itemFrame, "LEFT", 0, 0)
+            end
             label:SetText(itemName)
+            label:SetJustifyH("LEFT")
 
             -- Set up the button OnClick handler
             useButton:SetScript("OnClick", function()
@@ -448,30 +461,30 @@ function ConsumesManager_CreateManagerContent(parentFrame)
             useButton:Disable()
 
             -- Mouseover Tooltip
-            optionFrame:SetScript("OnEnter", function()
+            itemFrame:SetScript("OnEnter", function()
                 ConsumesManager_ShowConsumableTooltip(itemID)
             end)
-            optionFrame:SetScript("OnLeave", function()
+            itemFrame:SetScript("OnLeave", function()
                 if ConsumesManager_CustomTooltip then
                     ConsumesManager_CustomTooltip:Hide()
                 end
             end)
 
-            -- Store option info
-            table.insert(categoryInfo.options, {
-                frame = optionFrame,
+            -- Store item info
+            table.insert(categoryInfo.Items, {
+                frame = itemFrame,
                 label = label,
                 name = itemName,
                 itemID = itemID,
                 button = useButton
             })
 
-            index = index + 1  -- Increment index after adding option
-            numOptionsInCategory = numOptionsInCategory + 1  -- Increment options count
+            index = index + 1  -- Increment index after adding item
+            numItemsInCategory = numItemsInCategory + 1  -- Increment Items count
         end
 
-        -- Position the category label above its options
-        categoryLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index - numOptionsInCategory - 1) * lineHeight)
+        -- Position the category label above its Items
+        categoryLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index - numItemsInCategory - 1) * lineHeight)
 
         -- Store category info
         table.insert(parentFrame.categoryInfo, categoryInfo)
@@ -486,7 +499,7 @@ function ConsumesManager_CreateManagerContent(parentFrame)
 
     -- Message Label (adjusted to be a child of parentFrame)
     local messageLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    messageLabel:SetText("|cffff0000No consumables selected|r\n\n|cffffffffClick on |roptions|cffffffff to get started|r")
+    messageLabel:SetText("|cffff0000No consumables selected|r\n\n|cffffffffClick on |rItems|cffffffff to get started|r")
     messageLabel:SetPoint("CENTER", parentFrame, "CENTER", 0, 0)
     messageLabel:Hide()  -- Initially hidden
     parentFrame.messageLabel = messageLabel
@@ -514,7 +527,8 @@ function ConsumesManager_CreateManagerContent(parentFrame)
     ConsumesManager_UpdateManagerScrollBar()
 end
 
-function ConsumesManager_CreateOptionsContent(parentFrame)
+
+function ConsumesManager_CreateItemsContent(parentFrame)
     -- Create Search Input
     local searchBox = CreateFrame("EditBox", "ConsumesManager_SearchBox", parentFrame, "InputBoxTemplate")
     searchBox:SetWidth(WindowWidth - 50)
@@ -548,36 +562,36 @@ function ConsumesManager_CreateOptionsContent(parentFrame)
         -- Iterate over categories
         for _, categoryInfo in ipairs(parentFrame.categoryInfo) do
             local categoryLabel = categoryInfo.label
-            local anyOptionVisible = false
+            local anyitemVisible = false
 
-            -- First, check if any options in the category match the filter
-            for _, optionInfo in ipairs(categoryInfo.options) do
-                local itemNameLower = string.lower(optionInfo.name)
+            -- First, check if any Items in the category match the filter
+            for _, itemInfo in ipairs(categoryInfo.Items) do
+                local itemNameLower = string.lower(itemInfo.name)
 
                 if filterText == "" or string.find(itemNameLower, filterText, 1, true) then
-                    anyOptionVisible = true
+                    anyitemVisible = true
                     break
                 end
             end
 
-            -- If any options are visible, show the category label
-            if anyOptionVisible then
+            -- If any Items are visible, show the category label
+            if anyitemVisible then
                 categoryLabel:SetPoint("TOPLEFT", parentFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
                 categoryLabel:Show()
                 index = index + 1
 
-                -- Now, position and show the matching options
-                for _, optionInfo in ipairs(categoryInfo.options) do
-                    local optionFrame = optionInfo.frame
-                    local itemNameLower = string.lower(optionInfo.name)
+                -- Now, position and show the matching Items
+                for _, itemInfo in ipairs(categoryInfo.Items) do
+                    local itemFrame = itemInfo.frame
+                    local itemNameLower = string.lower(itemInfo.name)
 
                     if filterText == "" or string.find(itemNameLower, filterText, 1, true) then
-                        -- Show the option
-                        optionFrame:SetPoint("TOPLEFT", parentFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
-                        optionFrame:Show()
+                        -- Show the item
+                        itemFrame:SetPoint("TOPLEFT", parentFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
+                        itemFrame:Show()
                         index = index + 1
                     else
-                        optionFrame:Hide()
+                        itemFrame:Hide()
                     end
                 end
 
@@ -586,9 +600,9 @@ function ConsumesManager_CreateOptionsContent(parentFrame)
 
             else
                 categoryLabel:Hide()
-                -- Hide all options under this category
-                for _, optionInfo in ipairs(categoryInfo.options) do
-                    optionInfo.frame:Hide()
+                -- Hide all Items under this category
+                for _, itemInfo in ipairs(categoryInfo.Items) do
+                    itemInfo.frame:Hide()
                 end
             end
         end
@@ -598,7 +612,7 @@ function ConsumesManager_CreateOptionsContent(parentFrame)
         parentFrame.scrollChild:SetHeight(parentFrame.scrollChild.contentHeight)
 
         -- Update the scrollbar
-        ConsumesManager_UpdateOptionsScrollBar()
+        ConsumesManager_UpdateItemsScrollBar()
     end
 
     searchBox:SetScript("OnTextChanged", function()
@@ -606,7 +620,7 @@ function ConsumesManager_CreateOptionsContent(parentFrame)
     end)
 
     -- Adjust the size of the scroll frame to make room for the search box and add extra spacing
-    local scrollFrame = CreateFrame("ScrollFrame", "ConsumesManager_OptionsScrollFrame", parentFrame)
+    local scrollFrame = CreateFrame("ScrollFrame", "ConsumesManager_ItemsScrollFrame", parentFrame)
     scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -40)  -- Start below the search box
     scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -20, 60) -- Leave space for buttons
     scrollFrame:EnableMouseWheel(true)
@@ -650,11 +664,11 @@ function ConsumesManager_CreateOptionsContent(parentFrame)
         categoryLabel:SetTextColor(1, 1, 1)
         categoryLabel:Show()
         
-        local categoryInfo = { name = categoryName, label = categoryLabel, options = {} }
+        local categoryInfo = { name = categoryName, label = categoryLabel, Items = {} }
 
         index = index + 1  -- Position for the category label
 
-        local numOptionsInCategory = 0  -- Counter for options in this category
+        local numItemsInCategory = 0  -- Counter for Items in this category
 
         -- Sort the consumables by name
         table.sort(consumables, function(a, b) return a.name < b.name end)
@@ -665,17 +679,17 @@ function ConsumesManager_CreateOptionsContent(parentFrame)
             local itemName = consumable.name
 
             -- Create a frame that encompasses the checkbox and label
-            local optionFrame = CreateFrame("Frame", "ConsumesManager_OptionsFrame" .. index, scrollChild)
-            optionFrame:SetWidth(WindowWidth - 10)
-            optionFrame:SetHeight(lineHeight)
-            optionFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
-            optionFrame:Show()
+            local itemFrame = CreateFrame("Frame", "ConsumesManager_ItemsFrame" .. index, scrollChild)
+            itemFrame:SetWidth(WindowWidth - 10)
+            itemFrame:SetHeight(lineHeight)
+            itemFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
+            itemFrame:Show()
 
-            -- Create the checkbox inside the optionFrame
-            local checkbox = CreateFrame("CheckButton", "ConsumesManager_OptionsCheckbox" .. index, optionFrame)
+            -- Create the checkbox inside the itemFrame
+            local checkbox = CreateFrame("CheckButton", "ConsumesManager_ItemsCheckbox" .. index, itemFrame)
             checkbox:SetWidth(16)
             checkbox:SetHeight(16)
-            checkbox:SetPoint("LEFT", optionFrame, "LEFT", 0, 0)
+            checkbox:SetPoint("LEFT", itemFrame, "LEFT", 0, 0)
 
             -- Create Textures for the checkbox
             checkbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
@@ -684,7 +698,7 @@ function ConsumesManager_CreateOptionsContent(parentFrame)
             checkbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
 
             -- Create FontString for label
-            local label = optionFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            local label = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
             label:SetText(itemName)
 
@@ -699,31 +713,31 @@ function ConsumesManager_CreateOptionsContent(parentFrame)
             end
             parentFrame.checkboxes[currentItemID] = checkbox
 
-            -- Make the optionFrame clickable
-            optionFrame:EnableMouse(true)
-            optionFrame:SetScript("OnMouseDown", function()
+            -- Make the itemFrame clickable
+            itemFrame:EnableMouse(true)
+            itemFrame:SetScript("OnMouseDown", function()
                 checkbox:Click()
             end)
 
             -- Mouseover Tooltip
-            optionFrame:SetScript("OnEnter", function()
-                ConsumesManager_ShowOptionsTooltip(currentItemID)
+            itemFrame:SetScript("OnEnter", function()
+                ConsumesManager_ShowItemsTooltip(currentItemID)
             end)
-            optionFrame:SetScript("OnLeave", function()
-                if ConsumesManager_OptionsTooltip then
-                    ConsumesManager_OptionsTooltip:Hide()
+            itemFrame:SetScript("OnLeave", function()
+                if ConsumesManager_ItemsTooltip then
+                    ConsumesManager_ItemsTooltip:Hide()
                 end
             end)
 
-            -- Store option info
-            table.insert(categoryInfo.options, { frame = optionFrame, name = itemName })
+            -- Store item info
+            table.insert(categoryInfo.Items, { frame = itemFrame, name = itemName })
 
-            index = index + 1  -- Increment index after adding option
-            numOptionsInCategory = numOptionsInCategory + 1  -- Increment options count
+            index = index + 1  -- Increment index after adding item
+            numItemsInCategory = numItemsInCategory + 1  -- Increment Items count
         end
 
-        -- Position the category label above its options
-        categoryLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index - numOptionsInCategory - 1) * lineHeight)
+        -- Position the category label above its Items
+        categoryLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index - numItemsInCategory - 1) * lineHeight)
 
         -- Store category info
         table.insert(parentFrame.categoryInfo, categoryInfo)
@@ -737,7 +751,7 @@ function ConsumesManager_CreateOptionsContent(parentFrame)
     scrollChild:SetHeight(scrollChild.contentHeight)
 
     -- Scroll Bar
-    local scrollBar = CreateFrame("Slider", "ConsumesManager_OptionsScrollBar", parentFrame)
+    local scrollBar = CreateFrame("Slider", "ConsumesManager_ItemsScrollBar", parentFrame)
     -- Corrected Y-offsets to prevent overlapping
     scrollBar:SetPoint("TOPRIGHT", parentFrame, "TOPRIGHT", -2, -40)  -- Start below the search box
     scrollBar:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -2, 16) -- End above the buttons
@@ -757,7 +771,7 @@ function ConsumesManager_CreateOptionsContent(parentFrame)
     parentFrame.scrollBar = scrollBar
 
     -- Update the scrollbar
-    ConsumesManager_UpdateOptionsScrollBar()
+    ConsumesManager_UpdateItemsScrollBar()
 
     -- Create Select All Button
     local selectAllButton = CreateFrame("Button", "ConsumesManager_SelectAllButton", parentFrame, "UIPanelButtonTemplate")
@@ -788,21 +802,20 @@ function ConsumesManager_CreateOptionsContent(parentFrame)
     end)
 end
 
-function ConsumesManager_CreateCharactersContent(parentFrame)
+
+function ConsumesManager_CreateSettingsContent(parentFrame)
     -- Scroll Frame
-    local scrollFrame = CreateFrame("ScrollFrame", "ConsumesManager_CharactersScrollFrame", parentFrame)
+    local scrollFrame = CreateFrame("ScrollFrame", "ConsumesManager_SettingsScrollFrame", parentFrame)
     scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, 0)
     scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -20, 0)
     scrollFrame:EnableMouseWheel(true)
     scrollFrame:SetScript("OnMouseWheel", function()
         local delta = arg1
-        local current = scrollFrame:GetVerticalScroll()
-        local maxScroll = scrollFrame.maxScroll or 0
+        local current = this:GetVerticalScroll()
+        local maxScroll = this.maxScroll or 0
         local newScroll = math.max(0, math.min(current - (delta * 20), maxScroll))
-        scrollFrame:SetVerticalScroll(newScroll)
-        if parentFrame.scrollBar then
-            parentFrame.scrollBar:SetValue(newScroll)
-        end
+        this:SetVerticalScroll(newScroll)
+        parentFrame.scrollBar:SetValue(newScroll)
     end)
 
     -- Scroll Child Frame
@@ -810,10 +823,13 @@ function ConsumesManager_CreateCharactersContent(parentFrame)
     scrollChild:SetWidth(WindowWidth - 10)
     scrollChild:SetHeight(1)
     scrollFrame:SetScrollChild(scrollChild)
+    parentFrame.scrollChild = scrollChild
+    parentFrame.scrollFrame = scrollFrame
 
     -- Initialize variables
     parentFrame.checkboxes = {}
     local index = 0 -- Position index
+    local lineHeight = 20 -- Increased to accommodate spacing
 
     -- Ensure settings table for characters exists
     ConsumesManager_Settings["Characters"] = ConsumesManager_Settings["Characters"] or {}
@@ -850,11 +866,11 @@ function ConsumesManager_CreateCharactersContent(parentFrame)
     -- Create FontString for title
     local title = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, 0) -- Offset from the top
-    title:SetText("Select Characters to Track")
+    title:SetText("Select Characters To Track")
     title:SetTextColor(1, 1, 1)
 
     -- Offset index to start below the title
-    local startYOffset = 20
+    local startYOffset = -20
 
     -- For each character
     for _, characterName in ipairs(characterList) do
@@ -864,16 +880,16 @@ function ConsumesManager_CreateCharactersContent(parentFrame)
         local currentCharacterName = characterName
 
         -- Create a frame that encompasses the checkbox and label
-        local optionFrame = CreateFrame("Frame", "ConsumesManager_CharacterFrame" .. index, scrollChild)
-        optionFrame:SetWidth(WindowWidth - 10)
-        optionFrame:SetHeight(18)
-        optionFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -(startYOffset + (index - 1) * 20))
+        local itemFrame = CreateFrame("Frame", "ConsumesManager_CharacterFrame" .. index, scrollChild)
+        itemFrame:SetWidth(WindowWidth - 10)
+        itemFrame:SetHeight(18)
+        itemFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - (index - 1) * lineHeight)
 
-        -- Create the checkbox inside the optionFrame
-        local checkbox = CreateFrame("CheckButton", "ConsumesManager_CharacterCheckbox" .. index, optionFrame)
+        -- Create the checkbox inside the itemFrame
+        local checkbox = CreateFrame("CheckButton", "ConsumesManager_CharacterCheckbox" .. index, itemFrame)
         checkbox:SetWidth(16)
         checkbox:SetHeight(16)
-        checkbox:SetPoint("LEFT", optionFrame, "LEFT", 0, 0)
+        checkbox:SetPoint("LEFT", itemFrame, "LEFT", 0, 0)
 
         -- Create Textures for the checkbox
         checkbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
@@ -882,17 +898,14 @@ function ConsumesManager_CreateCharactersContent(parentFrame)
         checkbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
 
         -- Create FontString for label
-        local label = optionFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local label = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
         label:SetText(currentCharacterName)
+        label:SetJustifyH("LEFT")
 
         -- Set up the checkbox OnClick handler
         checkbox:SetScript("OnClick", function()
-            if checkbox:GetChecked() then
-                ConsumesManager_Settings["Characters"][currentCharacterName] = true
-            else
-                ConsumesManager_Settings["Characters"][currentCharacterName] = false
-            end
+            ConsumesManager_Settings["Characters"][currentCharacterName] = checkbox:GetChecked()
             ConsumesManager_UpdateManagerContent()
         end)
         -- Load saved setting
@@ -905,19 +918,107 @@ function ConsumesManager_CreateCharactersContent(parentFrame)
         end
         parentFrame.checkboxes[currentCharacterName] = checkbox
 
-        -- Make the optionFrame clickable (so clicking on the label checks/unchecks the box)
-        optionFrame:EnableMouse(true)
-        optionFrame:SetScript("OnMouseDown", function()
+        -- Make the itemFrame clickable (so clicking on the label checks/unchecks the box)
+        itemFrame:EnableMouse(true)
+        itemFrame:SetScript("OnMouseDown", function()
             checkbox:Click()
         end)
     end
 
+    -- Add spacing of 20 below the character list
+    index = index + 1
+
+    -- Create 'General Settings' title with spacing of 20
+    local generalSettingsTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    generalSettingsTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight)
+    generalSettingsTitle:SetText("General Settings")
+    generalSettingsTitle:SetTextColor(1, 1, 1)
+
+    -- Move index down for the checkboxes
+    index = index + 1
+
+    -- Initialize General Settings if not set
+    ConsumesManager_Settings.enableCategories = ConsumesManager_Settings.enableCategories == nil and true or ConsumesManager_Settings.enableCategories
+    ConsumesManager_Settings.showUseButton = ConsumesManager_Settings.showUseButton == nil and true or ConsumesManager_Settings.showUseButton
+
+    -- Create 'Enable Categories' checkbox
+    local enableCategoriesFrame = CreateFrame("Frame", "ConsumesManager_EnableCategoriesFrame", scrollChild)
+    enableCategoriesFrame:SetWidth(WindowWidth - 10)
+    enableCategoriesFrame:SetHeight(18)
+    enableCategoriesFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight)
+    enableCategoriesFrame:EnableMouse(true)
+
+    local enableCategoriesCheckbox = CreateFrame("CheckButton", "ConsumesManager_EnableCategoriesCheckbox", enableCategoriesFrame)
+    enableCategoriesCheckbox:SetWidth(16)
+    enableCategoriesCheckbox:SetHeight(16)
+    enableCategoriesCheckbox:SetPoint("LEFT", enableCategoriesFrame, "LEFT", 0, 0)
+
+    enableCategoriesCheckbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
+    enableCategoriesCheckbox:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down")
+    enableCategoriesCheckbox:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
+    enableCategoriesCheckbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
+
+    enableCategoriesCheckbox:SetChecked(ConsumesManager_Settings.enableCategories)
+
+    enableCategoriesCheckbox:SetScript("OnClick", function()
+        ConsumesManager_Settings.enableCategories = enableCategoriesCheckbox:GetChecked()
+        ConsumesManager_UpdateManagerContent()
+    end)
+
+    local enableCategoriesLabel = enableCategoriesFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    enableCategoriesLabel:SetPoint("LEFT", enableCategoriesCheckbox, "RIGHT", 4, 0)
+    enableCategoriesLabel:SetText("Enable Categories")
+    enableCategoriesLabel:SetJustifyH("LEFT")
+
+    -- Make the frame clickable (so clicking on the label checks/unchecks the box)
+    enableCategoriesFrame:SetScript("OnMouseDown", function()
+        enableCategoriesCheckbox:Click()
+    end)
+
+    index = index + 1  -- Move index down for next checkbox
+
+    -- Create 'Show Use Button' checkbox
+    local showUseButtonFrame = CreateFrame("Frame", "ConsumesManager_ShowUseButtonFrame", scrollChild)
+    showUseButtonFrame:SetWidth(WindowWidth - 10)
+    showUseButtonFrame:SetHeight(18)
+    showUseButtonFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight)
+    showUseButtonFrame:EnableMouse(true)
+
+    local showUseButtonCheckbox = CreateFrame("CheckButton", "ConsumesManager_ShowUseButtonCheckbox", showUseButtonFrame)
+    showUseButtonCheckbox:SetWidth(16)
+    showUseButtonCheckbox:SetHeight(16)
+    showUseButtonCheckbox:SetPoint("LEFT", showUseButtonFrame, "LEFT", 0, 0)
+
+    showUseButtonCheckbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
+    showUseButtonCheckbox:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down")
+    showUseButtonCheckbox:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
+    showUseButtonCheckbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
+
+    showUseButtonCheckbox:SetChecked(ConsumesManager_Settings.showUseButton)
+
+    showUseButtonCheckbox:SetScript("OnClick", function()
+        ConsumesManager_Settings.showUseButton = showUseButtonCheckbox:GetChecked()
+        ConsumesManager_UpdateManagerContent()
+    end)
+
+    local showUseButtonLabel = showUseButtonFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    showUseButtonLabel:SetPoint("LEFT", showUseButtonCheckbox, "RIGHT", 4, 0)
+    showUseButtonLabel:SetText("Show Use Button")
+    showUseButtonLabel:SetJustifyH("LEFT")
+
+    -- Make the frame clickable (so clicking on the label checks/unchecks the box)
+    showUseButtonFrame:SetScript("OnMouseDown", function()
+        showUseButtonCheckbox:Click()
+    end)
+
+    index = index + 1  -- Move index down after adding General Settings
+
     -- Adjust the scroll child height
-    scrollChild.contentHeight = startYOffset + index * 20
+    scrollChild.contentHeight = math.abs(startYOffset) + index * lineHeight
     scrollChild:SetHeight(scrollChild.contentHeight)
 
     -- Scroll Bar
-    local scrollBar = CreateFrame("Slider", "ConsumesManager_CharactersScrollBar", parentFrame)
+    local scrollBar = CreateFrame("Slider", "ConsumesManager_SettingsScrollBar", parentFrame)
     scrollBar:SetPoint("TOPRIGHT", parentFrame, "TOPRIGHT", -2, -16)
     scrollBar:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -2, 16)
     scrollBar:SetWidth(16)
@@ -934,12 +1035,12 @@ function ConsumesManager_CreateCharactersContent(parentFrame)
         scrollFrame:SetVerticalScroll(value)
     end)
     parentFrame.scrollBar = scrollBar
-    parentFrame.scrollFrame = scrollFrame
-    parentFrame.scrollChild = scrollChild
 
     -- Update the scrollbar
-    ConsumesManager_UpdateCharactersScrollBar()
+    ConsumesManager_UpdateSettingsScrollBar()
 end
+
+
 
 
 
@@ -967,11 +1068,11 @@ function ConsumesManager_UpdateManagerContent()
 
     -- If bank and mail have not been scanned, show message and hide item labels
     if not bankScanned or not mailScanned then
-        -- Hide all option frames
+        -- Hide all item frames and category labels
         for _, categoryInfo in ipairs(ManagerFrame.categoryInfo) do
             categoryInfo.label:Hide()
-            for _, optionInfo in ipairs(categoryInfo.options) do
-                optionInfo.frame:Hide()
+            for _, itemInfo in ipairs(categoryInfo.Items) do
+                itemInfo.frame:Hide()
             end
         end
 
@@ -993,86 +1094,172 @@ function ConsumesManager_UpdateManagerContent()
     -- Hide the message label
     ManagerFrame.messageLabel:Hide()
 
-    -- Iterate over categories
-    for _, categoryInfo in ipairs(ManagerFrame.categoryInfo) do
-        local anyOptionVisible = false
+    -- Check if categories are enabled
+    if ConsumesManager_Settings.enableCategories then
+        -- Iterate over categories
+        for _, categoryInfo in ipairs(ManagerFrame.categoryInfo) do
+            local anyItemVisible = false
 
-        -- First, check if any options in the category are enabled
-        for _, optionInfo in ipairs(categoryInfo.options) do
-            local itemID = optionInfo.itemID
-            if ConsumesManager_Settings[itemID] then
-                anyOptionVisible = true
-                break
-            end
-        end
-
-        -- If any options are visible, show the category label
-        if anyOptionVisible then
-            categoryInfo.label:SetPoint("TOPLEFT", ManagerFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
-            categoryInfo.label:Show()
-            index = index + 1
-
-            -- Now, position and show the enabled options
-            for _, optionInfo in ipairs(categoryInfo.options) do
-                local itemID = optionInfo.itemID
-                local itemName = optionInfo.name
-                local label = optionInfo.label
-                local button = optionInfo.button
-                local frame = optionInfo.frame
-
+            -- First, check if any Items in the category are enabled
+            for _, itemInfo in ipairs(categoryInfo.Items) do
+                local itemID = itemInfo.itemID
                 if ConsumesManager_Settings[itemID] then
-                    -- Sum counts across all selected characters
-                    local totalCount = 0
-                    for character, charData in pairs(data) do
-                        if ConsumesManager_Settings["Characters"][character] == true then
-                            local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
-                            local bank = charData["bank"] and charData["bank"][itemID] or 0
-                            local mail = charData["mail"] and charData["mail"][itemID] or 0
-                            totalCount = totalCount + inventory + bank + mail
-                        end
-                    end
-
-                    -- Update label text with counts
-                    label:SetText(itemName .. " (" .. totalCount .. ")")
-
-                    -- Adjust label color based on count
-                    if totalCount == 0 then
-                        label:SetTextColor(1, 0, 0)  -- Red
-                    elseif totalCount < 10 then
-                        label:SetTextColor(1, 0.4, 0)  -- Orange
-                    elseif totalCount <= 20 then
-                        label:SetTextColor(1, 0.85, 0)  -- Yellow
-                    else
-                        label:SetTextColor(0, 1, 0)  -- Green
-                    end
-
-                    -- Enable or disable the 'Use' button based on whether the item is in the player's inventory
-                    local playerInventory = data[playerName]["inventory"] or {}
-                    local countInInventory = playerInventory[itemID] or 0
-                    if countInInventory > 0 then
-                        button:Enable()
-                    else
-                        button:Disable()
-                    end
-
-                    -- Show and position the option frame
-                    frame:SetPoint("TOPLEFT", ManagerFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
-                    frame:Show()
-                    index = index + 1
-                    hasAnyVisibleItems = true
-                else
-                    frame:Hide()
+                    anyItemVisible = true
+                    break
                 end
             end
 
-            -- Add extra spacing after the category
-            index = index + 1  -- Add one extra line of spacing between categories
-        else
-            categoryInfo.label:Hide()
-            -- Hide all options under this category
-            for _, optionInfo in ipairs(categoryInfo.options) do
-                optionInfo.frame:Hide()
+            -- If any Items are visible, handle category label
+            if anyItemVisible then
+                categoryInfo.label:SetPoint("TOPLEFT", ManagerFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
+                categoryInfo.label:Show()
+                index = index + 1
+
+                -- Now, position and show the enabled Items
+                for _, itemInfo in ipairs(categoryInfo.Items) do
+                    local itemID = itemInfo.itemID
+                    local itemName = itemInfo.name
+                    local label = itemInfo.label
+                    local button = itemInfo.button
+                    local frame = itemInfo.frame
+
+                    if ConsumesManager_Settings[itemID] then
+                        -- Sum counts across all selected characters
+                        local totalCount = 0
+                        for character, charData in pairs(data) do
+                            if ConsumesManager_Settings["Characters"][character] == true then
+                                local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
+                                local bank = charData["bank"] and charData["bank"][itemID] or 0
+                                local mail = charData["mail"] and charData["mail"][itemID] or 0
+                                totalCount = totalCount + inventory + bank + mail
+                            end
+                        end
+
+                        -- Update label text with counts
+                        label:SetText(itemName .. " (" .. totalCount .. ")")
+
+                        -- Adjust label color based on count
+                        if totalCount == 0 then
+                            label:SetTextColor(1, 0, 0)  -- Red
+                        elseif totalCount < 10 then
+                            label:SetTextColor(1, 0.4, 0)  -- Orange
+                        elseif totalCount <= 20 then
+                            label:SetTextColor(1, 0.85, 0)  -- Yellow
+                        else
+                            label:SetTextColor(0, 1, 0)  -- Green
+                        end
+
+                        -- Enable or disable the 'Use' button based on whether the item is in the player's inventory
+                        local playerInventory = data[playerName]["inventory"] or {}
+                        local countInInventory = playerInventory[itemID] or 0
+
+                        if ConsumesManager_Settings.showUseButton then
+                            button:Show()
+                            if countInInventory > 0 then
+                                button:Enable()
+                            else
+                                button:Disable()
+                            end
+                            label:SetPoint("LEFT", button, "RIGHT", 4, 0)
+                        else
+                            button:Hide()
+                            label:SetPoint("LEFT", frame, "LEFT", 0, 0)
+                        end
+
+                        -- Show and position the item frame
+                        frame:SetPoint("TOPLEFT", ManagerFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
+                        frame:Show()
+                        index = index + 1
+                        hasAnyVisibleItems = true
+                    else
+                        frame:Hide()
+                    end
+                end
+
+                -- Add extra spacing after the category
+                index = index + 1  -- Add one extra line of spacing between categories
+            else
+                categoryInfo.label:Hide()
+                -- Hide all Items under this category
+                for _, itemInfo in ipairs(categoryInfo.Items) do
+                    itemInfo.frame:Hide()
+                end
             end
+        end
+    else
+        -- Categories are disabled
+        -- Collect all enabled items into a single list
+        local allItems = {}
+        for _, categoryInfo in ipairs(ManagerFrame.categoryInfo) do
+            categoryInfo.label:Hide()
+            for _, itemInfo in ipairs(categoryInfo.Items) do
+                local itemID = itemInfo.itemID
+                if ConsumesManager_Settings[itemID] then
+                    table.insert(allItems, itemInfo)
+                else
+                    itemInfo.frame:Hide()
+                end
+            end
+        end
+
+        -- Sort allItems by item name
+        table.sort(allItems, function(a, b) return a.name < b.name end)
+
+        -- Display all items
+        for _, itemInfo in ipairs(allItems) do
+            local itemID = itemInfo.itemID
+            local itemName = itemInfo.name
+            local label = itemInfo.label
+            local button = itemInfo.button
+            local frame = itemInfo.frame
+
+            -- Sum counts across all selected characters
+            local totalCount = 0
+            for character, charData in pairs(data) do
+                if ConsumesManager_Settings["Characters"][character] == true then
+                    local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
+                    local bank = charData["bank"] and charData["bank"][itemID] or 0
+                    local mail = charData["mail"] and charData["mail"][itemID] or 0
+                    totalCount = totalCount + inventory + bank + mail
+                end
+            end
+
+            -- Update label text with counts
+            label:SetText(itemName .. " (" .. totalCount .. ")")
+
+            -- Adjust label color based on count
+            if totalCount == 0 then
+                label:SetTextColor(1, 0, 0)  -- Red
+            elseif totalCount < 10 then
+                label:SetTextColor(1, 0.4, 0)  -- Orange
+            elseif totalCount <= 20 then
+                label:SetTextColor(1, 0.85, 0)  -- Yellow
+            else
+                label:SetTextColor(0, 1, 0)  -- Green
+            end
+
+            -- Enable or disable the 'Use' button based on whether the item is in the player's inventory
+            local playerInventory = data[playerName]["inventory"] or {}
+            local countInInventory = playerInventory[itemID] or 0
+
+            if ConsumesManager_Settings.showUseButton then
+                button:Show()
+                if countInInventory > 0 then
+                    button:Enable()
+                else
+                    button:Disable()
+                end
+                label:SetPoint("LEFT", button, "RIGHT", 4, 0)
+            else
+                button:Hide()
+                label:SetPoint("LEFT", frame, "LEFT", 0, 0)
+            end
+
+            -- Show and position the item frame
+            frame:SetPoint("TOPLEFT", ManagerFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
+            frame:Show()
+            index = index + 1
+            hasAnyVisibleItems = true
         end
     end
 
@@ -1085,7 +1272,7 @@ function ConsumesManager_UpdateManagerContent()
 
     if not hasAnyVisibleItems then
         -- Show message when no items are selected
-        ManagerFrame.messageLabel:SetText("|cffff0000No consumables selected|r\n\n|cffffffffClick on |roptions|cffffffff to get started|r")
+        ManagerFrame.messageLabel:SetText("|cffff0000No consumables selected|r\n\n|cffffffffClick on |rItems|cffffffff to get started|r")
         ManagerFrame.messageLabel:Show()
     else
         -- Hide the message label as we have content to display
@@ -1120,14 +1307,14 @@ function ConsumesManager_UpdateManagerScrollBar()
     end
 end
 
-function ConsumesManager_UpdateOptionsScrollBar()
-    local optionsFrame = ConsumesManager_MainFrame.tabs[2]
-    local scrollBar = optionsFrame.scrollBar
-    local scrollFrame = optionsFrame.scrollFrame
-    local scrollChild = optionsFrame.scrollChild
+function ConsumesManager_UpdateItemsScrollBar()
+    local ItemsFrame = ConsumesManager_MainFrame.tabs[2]
+    local scrollBar = ItemsFrame.scrollBar
+    local scrollFrame = ItemsFrame.scrollFrame
+    local scrollChild = ItemsFrame.scrollChild
 
     local totalHeight = scrollChild.contentHeight
-    local parentHeight = optionsFrame:GetHeight()
+    local parentHeight = ItemsFrame:GetHeight()
     local searchBoxHeight = 36  -- Adjusted height including padding
     local buttonsHeight = 40      -- Space reserved for Select/Deselect buttons
     local shownHeight = parentHeight - searchBoxHeight - buttonsHeight - 20  -- Additional padding
@@ -1147,11 +1334,11 @@ function ConsumesManager_UpdateOptionsScrollBar()
 end
 
 
-function ConsumesManager_UpdateCharactersScrollBar()
-    local charactersFrame = ConsumesManager_MainFrame.tabs[3]
-    local scrollBar = charactersFrame.scrollBar
-    local scrollFrame = charactersFrame.scrollFrame
-    local scrollChild = charactersFrame.scrollChild
+function ConsumesManager_UpdateSettingsScrollBar()
+    local OptionsFrame = ConsumesManager_MainFrame.tabs[3]
+    local scrollBar = OptionsFrame.scrollBar
+    local scrollFrame = OptionsFrame.scrollFrame
+    local scrollChild = OptionsFrame.scrollChild
 
     local totalHeight = scrollChild.contentHeight
     local shownHeight = 320  -- Adjust based on your UI
@@ -1173,6 +1360,7 @@ end
 
 
 -- Functions to USE an item -----------------------------------------------------------------------------
+
 function ConsumesManager_UpdateUseButtons()
     if not ConsumesManager_MainFrame or not ConsumesManager_MainFrame.tabs or not ConsumesManager_MainFrame.tabs[1] then
         return
@@ -1193,24 +1381,40 @@ function ConsumesManager_UpdateUseButtons()
 
     local inventory = charData["inventory"] or {}
 
-    -- Iterate over the options to update the buttons
+    -- Iterate over the Items to update the buttons
     for _, categoryInfo in ipairs(ManagerFrame.categoryInfo) do
-        for _, optionInfo in ipairs(categoryInfo.options) do
-            local itemID = optionInfo.itemID
-            local button = optionInfo.button
+        for _, itemInfo in ipairs(categoryInfo.Items) do
+            local itemID = itemInfo.itemID
+            local button = itemInfo.button
+            local label = itemInfo.label
+            local frame = itemInfo.frame
+
             if ConsumesManager_Settings[itemID] then
                 local count = inventory[itemID] or 0
                 if count > 0 then
-                    button:Enable()
+                    if ConsumesManager_Settings.showUseButton then
+                        button:Enable()
+                        button:Show()
+                        label:SetPoint("LEFT", button, "RIGHT", 4, 0)
+                    else
+                        button:Disable()
+                        button:Hide()
+                        label:SetPoint("LEFT", frame, "LEFT", 0, 0)
+                    end
                 else
                     button:Disable()
+                    button:Hide()
+                    label:SetPoint("LEFT", frame, "LEFT", 0, 0)
                 end
             else
                 button:Disable()
+                button:Hide()
+                label:SetPoint("LEFT", frame, "LEFT", 0, 0)
             end
         end
     end
 end
+
 
 function ConsumesManager_FindItemInBags(itemID)
     for bag = 0, 4 do
@@ -1272,7 +1476,7 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
         tooltipFrame.title = title
 
         -- Item Total
-        local total = tooltipFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        local total = tooltipFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         total:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, -20)
         total:SetPoint("RIGHT", tooltipFrame, "RIGHT", -10, 0)
         total:SetJustifyH("LEFT")
@@ -1363,7 +1567,7 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
         contentText = contentText .. "|cffff0000No items found for this consumable.|r"
     else
 
-        -- Sort characters alphabetically (optional)
+        -- Sort characters alphabetically (itemal)
         table.sort(characterList, function(a, b) return a.name < b.name end)
 
         -- Display data for each character
@@ -1394,8 +1598,8 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
     numLines = numLines + 2  -- Add lines for title and padding
 
     -- Adjust tooltip height based on the number of lines
-    local lineHeight = 10
-    local totalHeight = 50 + (numLines * lineHeight)
+    local lineHeightTooltip = 12
+    local totalHeight = 50 + (numLines * lineHeightTooltip)
     tooltipFrame:SetHeight(totalHeight)
 
     -- Set the width based on content
@@ -1410,14 +1614,15 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
     tooltipFrame:Show()
 end
 
-function ConsumesManager_ShowOptionsTooltip(itemID)
+
+function ConsumesManager_ShowItemsTooltip(itemID)
     -- Set the maximum width for the description text
-    local maxDescriptionWidth = 160
+    local maxDescriptionWidth = 200
 
     -- Create or reuse the tooltip frame
-    if not ConsumesManager_OptionsTooltip then
+    if not ConsumesManager_ItemsTooltip then
         -- Create the frame
-        local tooltipFrame = CreateFrame("Frame", "ConsumesManager_OptionsTooltip", UIParent)
+        local tooltipFrame = CreateFrame("Frame", "ConsumesManager_ItemsTooltip", UIParent)
         tooltipFrame:SetFrameStrata("TOOLTIP")
         tooltipFrame:SetBackdrop({
             bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
@@ -1442,71 +1647,39 @@ function ConsumesManager_ShowOptionsTooltip(itemID)
 
         -- Item description
         local description = tooltipFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        description:SetPoint("TOPLEFT", icon, "TOPRIGHT", 10, -16)
+        description:SetPoint("TOPLEFT", icon, "BOTTOMLEFT", 0, -10)
         description:SetWidth(maxDescriptionWidth)
         description:SetJustifyH("LEFT")
         description:SetTextColor(1, 1, 1)
         tooltipFrame.description = description
 
-        ConsumesManager_OptionsTooltip = tooltipFrame
+        ConsumesManager_ItemsTooltip = tooltipFrame
     end
 
-    local tooltipFrame = ConsumesManager_OptionsTooltip
+    local tooltipFrame = ConsumesManager_ItemsTooltip
 
     -- Get item info
     local itemName = consumablesList[itemID] or "Unknown Item"
     local itemTexture = consumablesTexture[itemID] or "Interface\\Icons\\INV_Misc_QuestionMark"
     local itemDescription = consumablesDescription[itemID] or ""
 
-    -- Function to add line breaks manually
-    local function WrapText(text, maxWidth, fontObject)
-        local wrappedText = ""
-        local currentLine = ""
-        local space = " "
-        local testString = tooltipFrame:CreateFontString(nil, "OVERLAY", fontObject)
-        testString:SetWidth(0)
-        testString:SetHeight(0)
-        testString:Hide() -- We don't need to display this
-
-        -- Replace \n with spaces to avoid unintended line breaks
-        text = string.gsub(text, "\n", " ")
-
-        -- Split the text into words
-        for word in string.gfind(text, "%S+") do
-            local testLine = currentLine == "" and word or (currentLine .. space .. word)
-            testString:SetText(testLine)
-            if testString:GetStringWidth() > maxWidth then
-                wrappedText = wrappedText == "" and currentLine or (wrappedText .. "\n" .. currentLine)
-                currentLine = word
-            else
-                currentLine = testLine
-            end
-        end
-        wrappedText = wrappedText == "" and currentLine or (wrappedText .. "\n" .. currentLine)
-        return wrappedText
-    end
-
-    -- Wrap the description text
-    local wrappedDescription = WrapText(itemDescription, maxDescriptionWidth, "GameFontNormal")
-
     -- Set icon, title, and description
     tooltipFrame.icon:SetTexture(itemTexture)
     tooltipFrame.title:SetText(itemName)
-    tooltipFrame.description:SetText(wrappedDescription)
+    tooltipFrame.description:SetText(itemDescription)
 
-    -- Calculate the number of lines in the wrapped description
-    local _, lineCount = string.gsub(wrappedDescription, "\n", "")
-    lineCount = lineCount + 1 -- Add 1 for the last line
+    -- Adjust the height of the description based on its content
+    tooltipFrame.description:SetWidth(maxDescriptionWidth)
+    tooltipFrame.description:SetText(itemDescription)
+    local descriptionHeight = tooltipFrame.description:GetHeight()
 
-    -- Set the heights for the description and the tooltip frame
-    local lineHeight = 12
-    tooltipFrame.description:SetHeight(lineCount * lineHeight)
-
-    local totalHeight = 50 + (lineCount * lineHeight)
+    -- Adjust tooltip height based on content
+    local totalHeight = 70 + descriptionHeight
     tooltipFrame:SetHeight(totalHeight)
 
     -- Set the width of the tooltip
-    local maxWidth = math.max(tooltipFrame.title:GetStringWidth() + 70, tooltipFrame.description:GetStringWidth() + 70)
+    local titleWidth = tooltipFrame.title:GetStringWidth() + 70
+    local maxWidth = math.max(titleWidth, maxDescriptionWidth + 20)
     tooltipFrame:SetWidth(maxWidth)
 
     -- Position the tooltip near the cursor
