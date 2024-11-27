@@ -25,6 +25,16 @@ Click the mini-map icon to open/close the Tracker
 
 ## Changelog
 
+**V1.6**
+```
+- Added more items to the consumables list
+- UI changes to the tabs
+- Added an option to show/hide a 'use'
+- Added an option to show/hide categories
+- Small UI fixes
+```
+
+
 **V1.5**
 ```
 - Can now be updated via the Turtle WoW launcher
