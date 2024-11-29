@@ -1,6 +1,6 @@
 -- Metadata ---------------------------------------------------------------------------------------------
 AddonName = "Consumes Manager"
-Version = "1.6"
+Version = "1.7"
 VState = "release"
 WindowWidth = 350
 
@@ -357,9 +357,61 @@ end
 
 -- Create Window Tabs -----------------------------------------------------------------------------------
 function ConsumesManager_CreateManagerContent(parentFrame)
+    -- Initialize sort order if not set
+    ConsumesManager_Settings.sortOrder = ConsumesManager_Settings.sortOrder or "name"
+    ConsumesManager_Settings.sortDirection = ConsumesManager_Settings.sortDirection or "asc"
+
+    -- Create buttons for sorting
+    local orderByNameButton = CreateFrame("Button", "ConsumesManager_OrderByNameButton", parentFrame, "UIPanelButtonTemplate")
+    orderByNameButton:SetWidth(100)
+    orderByNameButton:SetHeight(24)
+    orderByNameButton:SetText("Order by Name")
+    orderByNameButton:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -5)
+    orderByNameButton:SetScript("OnClick", function()
+        if ConsumesManager_Settings.sortOrder == "name" then
+            -- Toggle sort direction
+            if ConsumesManager_Settings.sortDirection == "asc" then
+                ConsumesManager_Settings.sortDirection = "desc"
+            else
+                ConsumesManager_Settings.sortDirection = "asc"
+            end
+        else
+            ConsumesManager_Settings.sortOrder = "name"
+            ConsumesManager_Settings.sortDirection = "asc"
+        end
+        ConsumesManager_UpdateManagerContent()
+    end)
+
+    local orderByAmountButton = CreateFrame("Button", "ConsumesManager_OrderByAmountButton", parentFrame, "UIPanelButtonTemplate")
+    orderByAmountButton:SetWidth(100)
+    orderByAmountButton:SetHeight(24)
+    orderByAmountButton:SetText("Order by Amount")
+    orderByAmountButton:SetPoint("LEFT", orderByNameButton, "RIGHT", 10, 0)
+    orderByAmountButton:SetScript("OnClick", function()
+        if ConsumesManager_Settings.sortOrder == "amount" then
+            -- Toggle sort direction
+            if ConsumesManager_Settings.sortDirection == "desc" then
+                ConsumesManager_Settings.sortDirection = "asc"
+            else
+                ConsumesManager_Settings.sortDirection = "desc"
+            end
+        else
+            ConsumesManager_Settings.sortOrder = "amount"
+            ConsumesManager_Settings.sortDirection = "desc"
+        end
+        ConsumesManager_UpdateManagerContent()
+    end)
+
+    parentFrame.orderByNameButton = orderByNameButton
+    parentFrame.orderByAmountButton = orderByAmountButton
+
+    -- Initially hide the order buttons
+    orderByNameButton:Hide()
+    orderByAmountButton:Hide()
+
     -- Scroll Frame
     local scrollFrame = CreateFrame("ScrollFrame", "ConsumesManager_ManagerScrollFrame", parentFrame)
-    scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, 0)
+    scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, -35) -- Adjusted to be below the buttons
     scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -20, 0)
     scrollFrame:EnableMouseWheel(true)
     scrollFrame:SetScript("OnMouseWheel", function()
@@ -405,7 +457,7 @@ function ConsumesManager_CreateManagerContent(parentFrame)
 
         index = index + 1  -- Position for the category label
 
-        local numItemsInCategory = 0  -- Counter for Items in this category
+        local numItemsInCategory = 0  -- Counter for items in this category
 
         -- Sort the consumables by name
         table.sort(consumables, function(a, b) return a.name < b.name end)
@@ -420,7 +472,7 @@ function ConsumesManager_CreateManagerContent(parentFrame)
             itemFrame:SetWidth(WindowWidth - 10)
             itemFrame:SetHeight(lineHeight)
             itemFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
-            itemFrame:Show()
+            itemFrame:Hide()
             itemFrame:EnableMouse(true)  -- Enable mouse events for OnEnter and OnLeave
 
             -- Create the 'Use' button inside the itemFrame
@@ -480,10 +532,10 @@ function ConsumesManager_CreateManagerContent(parentFrame)
             })
 
             index = index + 1  -- Increment index after adding item
-            numItemsInCategory = numItemsInCategory + 1  -- Increment Items count
+            numItemsInCategory = numItemsInCategory + 1  -- Increment item count
         end
 
-        -- Position the category label above its Items
+        -- Position the category label above its items
         categoryLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - (index - numItemsInCategory - 1) * lineHeight)
 
         -- Store category info
@@ -506,7 +558,7 @@ function ConsumesManager_CreateManagerContent(parentFrame)
 
     -- Scroll Bar
     local scrollBar = CreateFrame("Slider", "ConsumesManager_ManagerScrollBar", parentFrame)
-    scrollBar:SetPoint("TOPRIGHT", parentFrame, "TOPRIGHT", -2, -16)
+    scrollBar:SetPoint("TOPRIGHT", parentFrame, "TOPRIGHT", -2, -35) -- Adjusted to be below the buttons
     scrollBar:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -2, 16)
     scrollBar:SetWidth(16)
     scrollBar:SetOrientation('VERTICAL')
@@ -523,8 +575,8 @@ function ConsumesManager_CreateManagerContent(parentFrame)
     end)
     parentFrame.scrollBar = scrollBar
 
-    -- Update the scrollbar
-    ConsumesManager_UpdateManagerScrollBar()
+    -- Initially hide the scrollbar
+    scrollBar:Hide()
 end
 
 
@@ -1013,8 +1065,25 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
     index = index + 1  -- Move index down after adding General Settings
 
+    -- Add 'Reset Addon' Button
+    local resetButton = CreateFrame("Button", "ConsumesManager_ResetButton", scrollChild, "UIPanelButtonTemplate")
+    resetButton:SetWidth(120)
+    resetButton:SetHeight(24)
+    resetButton:SetText("Reset Addon")
+    resetButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 20)
+
+    resetButton:SetScript("OnClick", function()
+        -- Reset saved variables
+        ConsumesManager_Settings = {}
+        ConsumesManager_Data = {}
+        -- Reload UI
+        ReloadUI()
+    end)
+
+    index = index + 1  -- Move index down after adding Reset Button
+
     -- Adjust the scroll child height
-    scrollChild.contentHeight = math.abs(startYOffset) + index * lineHeight
+    scrollChild.contentHeight = math.abs(startYOffset) + index * lineHeight + 40
     scrollChild:SetHeight(scrollChild.contentHeight)
 
     -- Scroll Bar
@@ -1056,9 +1125,8 @@ function ConsumesManager_UpdateManagerContent()
     local playerName = UnitName("player")
 
     -- Ensure data structure exists
-    if not ConsumesManager_Data[realmName] or not ConsumesManager_Data[realmName][faction] then
-        return
-    end
+    ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
+    ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
     local data = ConsumesManager_Data[realmName][faction]
 
     -- Check if bank and mail have been scanned for current character
@@ -1066,18 +1134,26 @@ function ConsumesManager_UpdateManagerContent()
     local bankScanned = currentCharData and currentCharData["bank"] ~= nil
     local mailScanned = currentCharData and currentCharData["mail"] ~= nil
 
-    -- If bank and mail have not been scanned, show message and hide item labels
-    if not bankScanned or not mailScanned then
-        -- Hide all item frames and category labels
-        for _, categoryInfo in ipairs(ManagerFrame.categoryInfo) do
-            categoryInfo.label:Hide()
-            for _, itemInfo in ipairs(categoryInfo.Items) do
-                itemInfo.frame:Hide()
-            end
-        end
+    -- Hide the message label and order buttons by default
+    ManagerFrame.messageLabel:Hide()
+    ManagerFrame.orderByNameButton:Hide()
+    ManagerFrame.orderByAmountButton:Hide()
 
+    -- Hide all item frames and category labels
+    for _, categoryInfo in ipairs(ManagerFrame.categoryInfo) do
+        categoryInfo.label:Hide()
+        for _, itemInfo in ipairs(categoryInfo.Items) do
+            itemInfo.frame:Hide()
+        end
+    end
+
+    -- Reset the scrollChild height
+    ManagerFrame.scrollChild.contentHeight = 0
+    ManagerFrame.scrollChild:SetHeight(0)
+
+    if not bankScanned or not mailScanned then
         -- Show message
-        ManagerFrame.messageLabel:SetText("|cffff0000This character is not scanned yet|r\n\n|cffffffffOpen your |rBank|cffffffff and |rMail |cffffffffto get started|r")
+        ManagerFrame.messageLabel:SetText("|cffff0000This character is not scanned yet|r\n\n|cffffffffOpen your |rBank|cffffffff and |rMail|cffffffff to get started|r")
         ManagerFrame.messageLabel:Show()
 
         -- Update the Manager scrollbar
@@ -1091,8 +1167,9 @@ function ConsumesManager_UpdateManagerContent()
     local hasAnyVisibleItems = false  -- Track if any items are visible
     local lineHeight = 18
 
-    -- Hide the message label
-    ManagerFrame.messageLabel:Hide()
+    -- Get the current sort order and direction
+    local sortOrder = ConsumesManager_Settings.sortOrder or "name"
+    local sortDirection = ConsumesManager_Settings.sortDirection or "asc"
 
     -- Check if categories are enabled
     if ConsumesManager_Settings.enableCategories then
@@ -1100,87 +1177,103 @@ function ConsumesManager_UpdateManagerContent()
         for _, categoryInfo in ipairs(ManagerFrame.categoryInfo) do
             local anyItemVisible = false
 
-            -- First, check if any Items in the category are enabled
+            -- First, collect the enabled items and their counts
+            local enabledItems = {}
+
             for _, itemInfo in ipairs(categoryInfo.Items) do
                 local itemID = itemInfo.itemID
                 if ConsumesManager_Settings[itemID] then
+                    -- Sum counts across all selected characters
+                    local totalCount = 0
+                    for character, charData in pairs(data) do
+                        if ConsumesManager_Settings["Characters"][character] == true then
+                            local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
+                            local bank = charData["bank"] and charData["bank"][itemID] or 0
+                            local mail = charData["mail"] and charData["mail"][itemID] or 0
+                            totalCount = totalCount + inventory + bank + mail
+                        end
+                    end
+                    table.insert(enabledItems, {itemInfo = itemInfo, totalCount = totalCount})
                     anyItemVisible = true
-                    break
+                else
+                    itemInfo.frame:Hide()
                 end
             end
 
-            -- If any Items are visible, handle category label
+            -- If any items are visible, handle category label
             if anyItemVisible then
                 categoryInfo.label:SetPoint("TOPLEFT", ManagerFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
                 categoryInfo.label:Show()
                 index = index + 1
 
-                -- Now, position and show the enabled Items
-                for _, itemInfo in ipairs(categoryInfo.Items) do
+                -- Sort enabled items based on sort order and direction
+                if sortOrder == "name" then
+                    if sortDirection == "asc" then
+                        table.sort(enabledItems, function(a, b) return a.itemInfo.name < b.itemInfo.name end)
+                    else
+                        table.sort(enabledItems, function(a, b) return a.itemInfo.name > b.itemInfo.name end)
+                    end
+                elseif sortOrder == "amount" then
+                    if sortDirection == "desc" then
+                        table.sort(enabledItems, function(a, b) return a.totalCount > b.totalCount end)
+                    else
+                        table.sort(enabledItems, function(a, b) return a.totalCount < b.totalCount end)
+                    end
+                end
+
+                -- Now, position and show the enabled items
+                for _, itemData in ipairs(enabledItems) do
+                    local itemInfo = itemData.itemInfo
                     local itemID = itemInfo.itemID
                     local itemName = itemInfo.name
                     local label = itemInfo.label
                     local button = itemInfo.button
                     local frame = itemInfo.frame
+                    local totalCount = itemData.totalCount
 
-                    if ConsumesManager_Settings[itemID] then
-                        -- Sum counts across all selected characters
-                        local totalCount = 0
-                        for character, charData in pairs(data) do
-                            if ConsumesManager_Settings["Characters"][character] == true then
-                                local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
-                                local bank = charData["bank"] and charData["bank"][itemID] or 0
-                                local mail = charData["mail"] and charData["mail"][itemID] or 0
-                                totalCount = totalCount + inventory + bank + mail
-                            end
-                        end
+                    -- Update label text with counts
+                    label:SetText(itemName .. " (" .. totalCount .. ")")
 
-                        -- Update label text with counts
-                        label:SetText(itemName .. " (" .. totalCount .. ")")
-
-                        -- Adjust label color based on count
-                        if totalCount == 0 then
-                            label:SetTextColor(1, 0, 0)  -- Red
-                        elseif totalCount < 10 then
-                            label:SetTextColor(1, 0.4, 0)  -- Orange
-                        elseif totalCount <= 20 then
-                            label:SetTextColor(1, 0.85, 0)  -- Yellow
-                        else
-                            label:SetTextColor(0, 1, 0)  -- Green
-                        end
-
-                        -- Enable or disable the 'Use' button based on whether the item is in the player's inventory
-                        local playerInventory = data[playerName]["inventory"] or {}
-                        local countInInventory = playerInventory[itemID] or 0
-
-                        if ConsumesManager_Settings.showUseButton then
-                            button:Show()
-                            if countInInventory > 0 then
-                                button:Enable()
-                            else
-                                button:Disable()
-                            end
-                            label:SetPoint("LEFT", button, "RIGHT", 4, 0)
-                        else
-                            button:Hide()
-                            label:SetPoint("LEFT", frame, "LEFT", 0, 0)
-                        end
-
-                        -- Show and position the item frame
-                        frame:SetPoint("TOPLEFT", ManagerFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
-                        frame:Show()
-                        index = index + 1
-                        hasAnyVisibleItems = true
+                    -- Adjust label color based on count
+                    if totalCount == 0 then
+                        label:SetTextColor(1, 0, 0)  -- Red
+                    elseif totalCount < 10 then
+                        label:SetTextColor(1, 0.4, 0)  -- Orange
+                    elseif totalCount <= 20 then
+                        label:SetTextColor(1, 0.85, 0)  -- Yellow
                     else
-                        frame:Hide()
+                        label:SetTextColor(0, 1, 0)  -- Green
                     end
+
+                    -- Enable or disable the 'Use' button based on whether the item is in the player's inventory
+                    local playerInventory = data[playerName]["inventory"] or {}
+                    local countInInventory = playerInventory[itemID] or 0
+
+                    if ConsumesManager_Settings.showUseButton then
+                        button:Show()
+                        if countInInventory > 0 then
+                            button:Enable()
+                        else
+                            button:Disable()
+                        end
+                        label:SetPoint("LEFT", button, "RIGHT", 4, 0)
+                    else
+                        button:Hide()
+                        label:SetPoint("LEFT", frame, "LEFT", 0, 0)
+                    end
+
+                    -- Show and position the item frame
+                    frame:SetPoint("TOPLEFT", ManagerFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
+                    frame:Show()
+                    index = index + 1
+                    hasAnyVisibleItems = true
                 end
 
                 -- Add extra spacing after the category
                 index = index + 1  -- Add one extra line of spacing between categories
             else
                 categoryInfo.label:Hide()
-                -- Hide all Items under this category
+                -- Hide all items under this category
                 for _, itemInfo in ipairs(categoryInfo.Items) do
                     itemInfo.frame:Hide()
                 end
@@ -1188,41 +1281,55 @@ function ConsumesManager_UpdateManagerContent()
         end
     else
         -- Categories are disabled
-        -- Collect all enabled items into a single list
+        -- Collect all enabled items into a single list with their counts
         local allItems = {}
         for _, categoryInfo in ipairs(ManagerFrame.categoryInfo) do
             categoryInfo.label:Hide()
             for _, itemInfo in ipairs(categoryInfo.Items) do
                 local itemID = itemInfo.itemID
                 if ConsumesManager_Settings[itemID] then
-                    table.insert(allItems, itemInfo)
+                    -- Sum counts across all selected characters
+                    local totalCount = 0
+                    for character, charData in pairs(data) do
+                        if ConsumesManager_Settings["Characters"][character] == true then
+                            local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
+                            local bank = charData["bank"] and charData["bank"][itemID] or 0
+                            local mail = charData["mail"] and charData["mail"][itemID] or 0
+                            totalCount = totalCount + inventory + bank + mail
+                        end
+                    end
+                    table.insert(allItems, {itemInfo = itemInfo, totalCount = totalCount})
+                    hasAnyVisibleItems = true
                 else
                     itemInfo.frame:Hide()
                 end
             end
         end
 
-        -- Sort allItems by item name
-        table.sort(allItems, function(a, b) return a.name < b.name end)
+        -- Sort allItems based on sort order and direction
+        if sortOrder == "name" then
+            if sortDirection == "asc" then
+                table.sort(allItems, function(a, b) return a.itemInfo.name < b.itemInfo.name end)
+            else
+                table.sort(allItems, function(a, b) return a.itemInfo.name > b.itemInfo.name end)
+            end
+        elseif sortOrder == "amount" then
+            if sortDirection == "desc" then
+                table.sort(allItems, function(a, b) return a.totalCount > b.totalCount end)
+            else
+                table.sort(allItems, function(a, b) return a.totalCount < b.totalCount end)
+            end
+        end
 
         -- Display all items
-        for _, itemInfo in ipairs(allItems) do
+        for _, itemData in ipairs(allItems) do
+            local itemInfo = itemData.itemInfo
             local itemID = itemInfo.itemID
             local itemName = itemInfo.name
             local label = itemInfo.label
             local button = itemInfo.button
             local frame = itemInfo.frame
-
-            -- Sum counts across all selected characters
-            local totalCount = 0
-            for character, charData in pairs(data) do
-                if ConsumesManager_Settings["Characters"][character] == true then
-                    local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
-                    local bank = charData["bank"] and charData["bank"][itemID] or 0
-                    local mail = charData["mail"] and charData["mail"][itemID] or 0
-                    totalCount = totalCount + inventory + bank + mail
-                end
-            end
+            local totalCount = itemData.totalCount
 
             -- Update label text with counts
             label:SetText(itemName .. " (" .. totalCount .. ")")
@@ -1259,7 +1366,6 @@ function ConsumesManager_UpdateManagerContent()
             frame:SetPoint("TOPLEFT", ManagerFrame.scrollChild, "TOPLEFT", 0, - (index) * lineHeight)
             frame:Show()
             index = index + 1
-            hasAnyVisibleItems = true
         end
     end
 
@@ -1271,10 +1377,23 @@ function ConsumesManager_UpdateManagerContent()
     ConsumesManager_UpdateManagerScrollBar()
 
     if not hasAnyVisibleItems then
+        -- Hide the order buttons
+        ManagerFrame.orderByNameButton:Hide()
+        ManagerFrame.orderByAmountButton:Hide()
         -- Show message when no items are selected
         ManagerFrame.messageLabel:SetText("|cffff0000No consumables selected|r\n\n|cffffffffClick on |rItems|cffffffff to get started|r")
         ManagerFrame.messageLabel:Show()
+
+        -- Reset the scrollChild height
+        ManagerFrame.scrollChild.contentHeight = 0
+        ManagerFrame.scrollChild:SetHeight(0)
+
+        -- Update the scrollbar
+        ConsumesManager_UpdateManagerScrollBar()
     else
+        -- Show the order buttons
+        ManagerFrame.orderByNameButton:Show()
+        ManagerFrame.orderByAmountButton:Show()
         -- Hide the message label as we have content to display
         ManagerFrame.messageLabel:Hide()
     end
