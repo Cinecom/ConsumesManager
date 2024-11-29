@@ -24,6 +24,11 @@ Click the mini-map icon to open/close the Tracker
 
 
 ## Changelog
+**1.7**
+```
+- Added a reset button to wipe all settings and caches
+- Added buttons to order by name or amount in the tracker window
+```
 
 **V1.6**
 ```
