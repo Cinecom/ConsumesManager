@@ -24,6 +24,15 @@ Click the mini-map icon to open/close the Tracker
 
 
 ## Changelog
+**1.8**
+```
+- Added new consumables and fixed some missmatched icons
+- Added a new feature that shows a list of must-have consumables per class per raid
+- Fixed an issue where settings did not save
+- Disables the Items and Presets window if the character has not been scanned yet
+- Fixed an issue where disabled characters corrupted the Data table
+```
+
 **1.7**
 ```
 - Added a reset button to wipe all settings and caches
