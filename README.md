@@ -26,7 +26,7 @@ Click the mini-map icon to open/close the Tracker
 ## Changelog
 **1.8**
 ```
-- Added new consumables and fixed some missmatched icons
+- Added new consumables and fixed some mismatched icons
 - Added a new feature that shows a list of must-have consumables per class per raid
 - Fixed an issue where settings did not save
 - Disables the Items and Presets window if the character has not been scanned yet
