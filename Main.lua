@@ -2515,7 +2515,7 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
             ConsumesManager_Options.Password = nil
             UpdateLeaveButtonState()
             updateSenDataButtonState()
-            channelErrorMessage:Hide()
+            --channelErrorMessage:Hide()
         end
     end)
 
