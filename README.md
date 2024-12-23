@@ -4,7 +4,8 @@ Currently in beta and needs testing. Report bugs here: https://github.com/Cineco
 Easily track and manage your consumables, food buffs, and more across your inventory, bank, and mail, while supporting multiple characters and accounts.
 Created with ♥ by Horyoshi for World of Warcraft 1.12 **Turtle WoW**
 
-https://www.youtube.com/watch?v=GMo-7vIHxl0
+[![Consumes Manager Video Tutorial](https://img.youtube.com/vi/GMo-7vIHxl0/0.jpg)](https://www.youtube.com/watch?v=GMo-7vIHxl0)
+
 
 ## How To
 
