@@ -2294,8 +2294,13 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
     enableCategoriesCheckbox:SetChecked(ConsumesManager_Options.enableCategories)
 
     enableCategoriesCheckbox:SetScript("OnClick", function()
-        ConsumesManager_Options.enableCategories = enableCategoriesCheckbox:GetChecked()
-        ConsumesManager_UpdateAllContent()
+        if enableCategoriesCheckbox:GetChecked() then
+            ConsumesManager_Options.enableCategories = true
+        else
+            ConsumesManager_Options.enableCategories = false 
+        end
+        ConsumesManager_UpdateManagerContent()
+        ConsumesManager_UpdatePresetsConsumables()
     end)
 
     local enableCategoriesLabel = enableCategoriesFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -2326,8 +2331,13 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
     showUseButtonCheckbox:SetChecked(ConsumesManager_Options.showUseButton)
 
     showUseButtonCheckbox:SetScript("OnClick", function()
-        ConsumesManager_Options.showUseButton = showUseButtonCheckbox:GetChecked()
-        ConsumesManager_UpdateAllContent()
+        if showUseButtonCheckbox:GetChecked() then
+            ConsumesManager_Options.showUseButton = true
+        else
+            ConsumesManager_Options.showUseButton = false 
+        end
+        ConsumesManager_UpdateManagerContent()
+        ConsumesManager_UpdatePresetsConsumables()
     end)
 
     local showUseButtonLabel = showUseButtonFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -2620,13 +2630,13 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
             if noticeType == "WRONG_PASSWORD" and channelName == inputChannelName then
                 channelmsg = "WRONG_PASSWORD"
-                --DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
             elseif noticeType == "NOT_MODERATOR" and channelName == inputChannelName then
                 channelmsg = "NOT_MODERATOR"
-                --DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
             elseif noticeType == "YOU_JOINED" and channelName == inputChannelName then
                 channelmsg = "YOU_JOINED"
-                --DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
             end
 
         end)
@@ -2673,11 +2683,12 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
                 if one_attempt == 0 then
 
-                    --DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
 
                     if channelmsg == "WRONG_PASSWORD" then
                         final_result = "WRONG_PASSWORD"
                     elseif channelmsg == "YOU_JOINED" then
+                        DEFAULT_CHAT_FRAME:AddMessage("setting password")
                         SetChannelPassword(ctext, ptext)
                     end
                 end
@@ -2691,7 +2702,7 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
                 if one_attempt == 1 then
 
-                    --DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
 
                     if channelmsg == "YOU_JOINED" then
                         final_result = "SUCCESS"
@@ -2710,7 +2721,7 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
                 if one_attempt == 2 then
 
-                    --DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
 
                     if try_again == true then
 
@@ -2726,7 +2737,7 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
                 if one_attempt == 3 then
 
-                    --DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
 
                     if try_again == true then
 
@@ -2799,13 +2810,6 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
             delayFrame:Show()
         end)
     end)
-
-
-
-
-
-
-
 end
 
 function ConsumesManager_UpdateSettingsContent()
