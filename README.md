@@ -24,6 +24,16 @@ Click the mini-map icon to open/close the Tracker
 
 
 ## Changelog
+**2.0**
+```
+- Added a new feature which allows syncing between multiple accounts (in beta)
+- Added new consumes to the itemlist
+- Added materials or objectives needed to make the consumes in the tooltips
+- Fixed some wrong ID's in the itemlist
+- Increased Performance in item scanning
+- Added class color codes to the preset lists and ordered the items better
+```
+
 **1.8**
 ```
 - Added new consumables and fixed some mismatched icons
