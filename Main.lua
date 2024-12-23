@@ -2620,13 +2620,13 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
             if noticeType == "WRONG_PASSWORD" and channelName == inputChannelName then
                 channelmsg = "WRONG_PASSWORD"
-                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+                --DEFAULT_CHAT_FRAME:AddMessage(noticeType)
             elseif noticeType == "NOT_MODERATOR" and channelName == inputChannelName then
                 channelmsg = "NOT_MODERATOR"
-                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+                --DEFAULT_CHAT_FRAME:AddMessage(noticeType)
             elseif noticeType == "YOU_JOINED" and channelName == inputChannelName then
                 channelmsg = "YOU_JOINED"
-                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+                --DEFAULT_CHAT_FRAME:AddMessage(noticeType)
             end
 
         end)
@@ -2673,12 +2673,11 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
                 if one_attempt == 0 then
 
-                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+                    --DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
 
                     if channelmsg == "WRONG_PASSWORD" then
                         final_result = "WRONG_PASSWORD"
                     elseif channelmsg == "YOU_JOINED" then
-                        DEFAULT_CHAT_FRAME:AddMessage("setting password")
                         SetChannelPassword(ctext, ptext)
                     end
                 end
@@ -2692,7 +2691,7 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
                 if one_attempt == 1 then
 
-                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+                    --DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
 
                     if channelmsg == "YOU_JOINED" then
                         final_result = "SUCCESS"
@@ -2711,7 +2710,7 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
                 if one_attempt == 2 then
 
-                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+                    --DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
 
                     if try_again == true then
 
@@ -2727,7 +2726,7 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
                 if one_attempt == 3 then
 
-                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+                    --DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
 
                     if try_again == true then
 
