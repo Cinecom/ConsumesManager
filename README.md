@@ -1,27 +1,16 @@
 Currently in beta and needs testing. Report bugs here: https://github.com/Cinecom/ConsumesTracker/issues
 
 # Consumes Manager
-Tracks and manages consumables across your inventory, bank and mail through multiple characters. Keeps track of how much consumes you have left.
+Easily track and manage your consumables, food buffs, and more across your inventory, bank, and mail, while supporting multiple characters and accounts.
 Created with ♥ by Horyoshi for World of Warcraft 1.12 **Turtle WoW**
 
-<img width="400" alt="manager" src="https://github.com/user-attachments/assets/ddd03dd6-607f-41e1-b103-34cfe9edf721">
-<img width="253" alt="options" src="https://github.com/user-attachments/assets/dc29ede3-9dc8-4ba6-96cf-572d71cdcb5f">
-<img width="253" alt="characters" src="https://github.com/user-attachments/assets/44eec157-8060-4e96-bf14-ea5d25f35361">
+https://www.youtube.com/watch?v=GMo-7vIHxl0
 
 ## How To
 
 Unzip the file and place the 'ConsumesManager' folder in your /Interface/AddOns folder. Remove '-master' from the folder name!
 
-Click the mini-map icon to open/close the Tracker
-- Tracker: shows the consumables that you track (need innitial setup, just follow instructions)
-- Options: enable / disable items you want to track
-- Characters: exclude characters you don't want to track
-
-## Future Features
-
-- Syncing across multiple accounts on the same server (bank alts)
-- View preset lists for your class for specific raids. (ie. shows list of consumes that a mage needs to bring to BWL)
-
+Click the mini-map icon to open/close the Tracker. For a detailled overview watch the tutorial video on top.
 
 ## Changelog
 **2.0**
