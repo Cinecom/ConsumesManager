@@ -1,66 +1,47 @@
--- Metadata ---------------------------------------------------------------------------------------------
-AddonName = "Consumes Manager"
-Version = "1.8"
-VState = "release"
-WindowWidth = 350
-
 -- Onload & Click Functionality -------------------------------------------------------------------------
-function ConsumesManager_OnLoad(self)
-    self:RegisterForDrag("LeftButton")
-    self:SetScript("OnDragStart", function() ConsumesManager_OnDragStart(self) end)
-    self:SetScript("OnDragStop", function() ConsumesManager_OnDragStop(self) end)
+    WindowWidth = 350
 
-    -- Create a frame for the delay
-    local delayFrame = CreateFrame("Frame")
-    local elapsed = 0
-    local delay = 1
+    function ConsumesManager_OnLoad(self)
+        self:RegisterForDrag("LeftButton")
+        self:SetScript("OnDragStart", function() ConsumesManager_OnDragStart(self) end)
+        self:SetScript("OnDragStop", function() ConsumesManager_OnDragStop(self) end)
+    end
 
-    delayFrame:SetScript("OnUpdate", function()
-        elapsed = elapsed + arg1 -- arg1 provides the time since the last frame
-        if elapsed >= delay then
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00" .. AddonName .. "|r |cffaaaaaa(v" .. Version .. "-" .. VState .. ")|r |cffffffffLoaded!|r  |cffaaaaaa- Made by Horyoshi|r")
-            delayFrame:SetScript("OnUpdate", nil) -- Stop the OnUpdate script
-        end
-    end)
-end
-
-function ConsumesManager_HandleClick(self, button)
-    if not self then return end
-    if button == "LeftButton" and not IsShiftKeyDown() then
-        if ConsumesManager_MainFrame and ConsumesManager_MainFrame:IsShown() then
-            ConsumesManager_MainFrame:Hide()
-        else
-            ConsumesManager_ShowMainWindow()
+    function ConsumesManager_HandleClick(self, button)
+        if not self then return end
+        if button == "LeftButton" and not IsShiftKeyDown() then
+            if ConsumesManager_MainFrame and ConsumesManager_MainFrame:IsShown() then
+                ConsumesManager_MainFrame:Hide()
+            else
+                ConsumesManager_ShowMainWindow()
+            end
         end
     end
 
-end
-
-function ConsumesManager_OnDragStart(self)
-    if IsShiftKeyDown() then
-        self:StartMoving()
-        self.isMoving = true
+    function ConsumesManager_OnDragStart(self)
+        if IsShiftKeyDown() then
+            self:StartMoving()
+            self.isMoving = true
+        end
     end
-end
 
-function ConsumesManager_OnDragStop(self)
-    if self and self.isMoving then
-        self:StopMovingOrSizing()
-        self.isMoving = false
+    function ConsumesManager_OnDragStop(self)
+        if self and self.isMoving then
+            self:StopMovingOrSizing()
+            self.isMoving = false
+        end
     end
-end
 
 
-if not ConsumesManager_Options then
-    ConsumesManager_Options = {}
-end
-if not ConsumesManager_SelectedItems then
-    ConsumesManager_SelectedItems = {}
-end
-if not ConsumesManager_Data then
-    ConsumesManager_Data = {}
-end
-
+    if not ConsumesManager_Options then
+        ConsumesManager_Options = {}
+    end
+    if not ConsumesManager_SelectedItems then
+        ConsumesManager_SelectedItems = {}
+    end
+    if not ConsumesManager_Data then
+        ConsumesManager_Data = {}
+    end
 
 -- Event frame for updating data ------------------------------------------------------------------------
     local ConsumesManager_EventFrame = CreateFrame("Frame")
@@ -75,6 +56,31 @@ end
 
     ConsumesManager_EventFrame:SetScript("OnEvent", function()
         if event == "PLAYER_LOGIN" then
+            if ConsumesManager_Options and ConsumesManager_Options.Channel and ConsumesManager_Options.Password then
+                local channelName = DecodeMessage(ConsumesManager_Options.Channel)
+                local channelPassword = DecodeMessage(ConsumesManager_Options.Password)
+                JoinChannelByName(channelName, channelPassword)
+                SetChannelPassword(channelName, channelPassword)
+                MultiAccountChannelAnnounce = "|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") .. ":|r |cffffffffJoined|r |cffffc0c0[" .. channelName .. "]|r|cffffffff. Multi-account synchronization |cff00ff00enabled|r|cffffffff.|r"
+                ReadData("start")
+            else
+                MultiAccountChannelAnnounce = "|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") .. ":|r Multi-account synchronization |cffff0000disabled|r|cffffffff. Check the addon options for setup.|r"
+                ReadData("stop")
+            end
+
+            local delayFrame = CreateFrame("Frame")
+            local elapsed = 0
+            local delay = 1
+
+            delayFrame:SetScript("OnUpdate", function()
+                elapsed = elapsed + arg1 -- arg1 provides the time since the last frame
+                if elapsed >= delay then
+                    DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00" .. GetAddOnMetadata("ConsumesManager", "Title") .. "|r |cffaaaaaa(v" .. GetAddOnMetadata("ConsumesManager", "Version") .. ")|r |cffffffffLoaded!|r")
+                    DEFAULT_CHAT_FRAME:AddMessage(MultiAccountChannelAnnounce)
+                    delayFrame:SetScript("OnUpdate", nil) -- Stop the OnUpdate script
+                end
+            end)
+
             ConsumesManager_ScanPlayerInventory()
             ConsumesManager_ScanPlayerBank()
             ConsumesManager_ScanPlayerMail()
@@ -88,7 +94,7 @@ end
             end
         elseif event == "BANKFRAME_OPENED" then
             ConsumesManager_ScanPlayerBank()
-        elseif event == "PLAYERBANKSLOTS_CHANGED" then  
+        elseif event == "PLAYERBANKSLOTS_CHANGED" then
             ConsumesManager_ScanPlayerBank()
             ConsumesManager_ScanPlayerInventory()
         elseif event == "ITEM_LOCK_CHANGED" then
@@ -141,10 +147,44 @@ function ConsumesManager_CreateMainWindow()
     })
     ConsumesManager_MainFrame:SetBackdropColor(0.1, 0.1, 0.1, 1)
 
+    -- Progress Bar for Syncing
+    ProgressBarFrame = CreateFrame("Frame", "ConsumesManager_ProgressBar", ConsumesManager_MainFrame, BackdropTemplateMixin and "BackdropTemplate")
+    ProgressBarFrame:SetWidth(20)
+    ProgressBarFrame:SetHeight(496)
+    ProgressBarFrame:SetPoint("TOPRIGHT", ConsumesManager_MainFrame, "TOPRIGHT", 10, -8)
+    ProgressBarFrame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    ProgressBarFrame:SetBackdropColor(0,0,0,1)
+    ProgressBarFrame:SetBackdropBorderColor(0.5,0.5,0.5,1)
+    ProgressBarFrame:SetFrameLevel(ConsumesManager_MainFrame:GetFrameLevel() - 1)
+    ProgressBarFrame:Hide()
+
+    ProgressBarFrame_fill = CreateFrame("Frame", "ConsumesManager_ProgressBarFill", ProgressBarFrame, BackdropTemplateMixin and "BackdropTemplate")
+    ProgressBarFrame_fill:SetWidth(17)
+    ProgressBarFrame_fill:SetHeight(0)
+    ProgressBarFrame_fill:SetPoint("BOTTOMLEFT", ProgressBarFrame, "BOTTOMLEFT", 1, 2)
+    ProgressBarFrame_fill:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8"
+    })
+    ProgressBarFrame_fill:SetBackdropColor(0,0.6,0,1)
+    ProgressBarFrame_fill:Hide()
+    ProgressBarFrame_fill:SetFrameLevel(ProgressBarFrame:GetFrameLevel() + 1)
+
+
+    ProgressBarFrame_Text = ProgressBarFrame_fill:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    ProgressBarFrame_Text:SetText("S\n\nY\n\nN\n\nC\n\nI\n\nN\n\nG")
+    ProgressBarFrame_Text:SetPoint("CENTER", ProgressBarFrame, "CENTER", 1, 0)
+    ProgressBarFrame_Text:SetTextColor(1,1,1)
+    ProgressBarFrame_Text:Hide()
+
+
     -- Title Text
     local titleText = ConsumesManager_MainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    titleText:SetText(AddonName)
-    titleText:SetPoint("TOP", ConsumesManager_MainFrame, "TOP", 0, 0)
+    titleText:SetText("Consumes Manager")
+    titleText:SetPoint("TOP", ConsumesManager_MainFrame, "TOP", 0, -2)
 
     -- Calculate the width of the title text and adjust the title background accordingly
     local titleWidth = titleText:GetStringWidth() + 200 
@@ -237,7 +277,6 @@ function ConsumesManager_CreateMainWindow()
         return tab
     end
 
-
    
 
     -- Manager Tab
@@ -267,6 +306,25 @@ function ConsumesManager_CreateMainWindow()
         ConsumesManager_ShowTab(4)
     end
     tab4:SetScript("OnClick", tab4.originalOnClick)
+
+
+    -- Send Data Button
+    sendDataButton = CreateTab("ConsumesManager_sendDataButton", "Interface\\Icons\\inv_misc_punchcards_prismatic", 280, "Push Data", 5)
+    function updateSenDataButtonState()
+        if ConsumesManager_Options.Channel == nil or ConsumesManager_Options.Channel == "" or ConsumesManager_Options.Password == nil or ConsumesManager_Options.Password == "" then
+            sendDataButton:Hide()
+            ReadData("stop")
+        else
+            sendDataButton:Show()
+            ReadData("start")
+        end
+    end
+    updateSenDataButtonState()
+    sendDataButton.originalOnClick = function()
+        PushData()
+    end
+    sendDataButton:SetScript("OnClick", sendDataButton.originalOnClick)
+
 
     -- Add Grey Line Under Tabs
     local tabsLine = ConsumesManager_MainFrame:CreateTexture(nil, "ARTWORK")
@@ -302,11 +360,12 @@ function ConsumesManager_CreateMainWindow()
     tab4Content:SetPoint("TOPLEFT", ConsumesManager_MainFrame, "TOPLEFT", 30, -80)
     ConsumesManager_MainFrame.tabs[4] = tab4Content
 
-    -- Footer Text
+    -- Footer Button to Push Database
     local footerText = ConsumesManager_MainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    footerText:SetText("Made by Horyoshi (v" .. Version .. "-" .. VState .. ")")
+    footerText:SetText("Made by Horyoshi (v" .. GetAddOnMetadata("ConsumesManager", "Version") .. ")")
     footerText:SetTextColor(0.6, 0.6, 0.6)
     footerText:SetPoint("BOTTOM", ConsumesManager_MainFrame, "BOTTOM", 0, 15)
+
 
     -- Add Grey Line Above Footer
     local footerLine = ConsumesManager_MainFrame:CreateTexture(nil, "ARTWORK")
@@ -348,6 +407,8 @@ function ConsumesManager_ShowMainWindow()
     ConsumesManager_UpdateManagerContent()
     -- Update the Presets content
     ConsumesManager_UpdatePresetsConsumables()
+    ConsumesManager_UpdateSettingsContent()
+    ConsumesManager_UpdateManagerContent()
 end
 
 
@@ -900,7 +961,6 @@ function ConsumesManager_UpdateManagerContent()
     end
 end
 
-
 function ConsumesManager_UpdateManagerScrollBar()
     local ManagerFrame = ConsumesManager_MainFrame.tabs[1]
     local scrollBar = ManagerFrame.scrollBar
@@ -1235,14 +1295,68 @@ end
 
 
 -- Presets Window -----------------------------------------------------------------------------------
+
+    local classColors = {
+        ["Rogue"] = "fff569",
+        ["Mage"] = "69ccf0",
+        ["Warrior"] = "c79c6e",
+        ["Hunter"] = "abd473",
+        ["Druid"] = "ff7d0a",
+        ["Priest"] = "ffffff",
+        ["Warlock"] = "9482c9",
+        ["Shaman"] = "0070dd",
+        ["Paladin"] = "f58cba"
+    }
+
+    -- Manually ordered raids (adjust as needed)
+    local orderedRaids = {
+        "Molten Core",
+        "Blackwing Lair",
+        "Emerald Sanctum",
+        "Temple of Ahn'Qiraj",
+        "Naxxramas",
+        "The Tower of Karazhan"
+    }
+
+    local function GetLastWord(str)
+        local spacePos = 0
+        while true do
+            local found = string.find(str, " ", spacePos + 1)
+            if found then
+                spacePos = found
+            else
+                break
+            end
+        end
+        if spacePos == 0 then
+            return str
+        else
+            return string.sub(str, spacePos + 1)
+        end
+    end
+
+    local function SortClassesByLastWord(t)
+        local n = table.getn(t)
+        local i = 1
+        while i < n do
+            local j = i + 1
+            while j <= n do
+                local lwA = GetLastWord(t[i])
+                local lwB = GetLastWord(t[j])
+                if lwA > lwB then
+                    t[i], t[j] = t[j], t[i]
+                end
+                j = j + 1
+            end
+            i = i + 1
+        end
+    end
+
 function ConsumesManager_CreatePresetsContent(parentFrame)
-    -- Define line height for consumable entries
     local lineHeight = 18
 
-    -- Create Dropdowns for Raids and Classes
-    -- Raid Dropdown
     local raidDropdown = CreateFrame("Frame", "ConsumesManager_PresetsRaidDropdown", parentFrame, "UIDropDownMenuTemplate")
-    raidDropdown:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", -20, 0)  -- Adjusted for better positioning
+    raidDropdown:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", -20, 0)
     UIDropDownMenu_SetWidth(120, raidDropdown)
     UIDropDownMenu_SetText("Select |cffffff00Raid|r", raidDropdown)
 
@@ -1251,9 +1365,8 @@ function ConsumesManager_CreatePresetsContent(parentFrame)
         raidDropdownText:SetJustifyH("LEFT")
     end
 
-    -- Class Dropdown
     local classDropdown = CreateFrame("Frame", "ConsumesManager_PresetsClassDropdown", parentFrame, "UIDropDownMenuTemplate")
-    classDropdown:SetPoint("LEFT", raidDropdown, "RIGHT", -20, 0)  -- Positive offset to prevent overlap
+    classDropdown:SetPoint("LEFT", raidDropdown, "RIGHT", -20, 0)
     UIDropDownMenu_SetWidth(120, classDropdown)
     UIDropDownMenu_SetText("Select |cffffff00Class|r", classDropdown)
 
@@ -1262,65 +1375,49 @@ function ConsumesManager_CreatePresetsContent(parentFrame)
         classDropdownText:SetJustifyH("LEFT")
     end
 
-    -- Initialize dropdown menus
     local classes = {}
-
-    -- Populate Classes Dropdown
     for className, _ in pairs(classPresets) do
         table.insert(classes, className)
     end
 
-    -- Manual sort of classes (bubble sort)
-    for i = 1, table.getn(classes) - 1 do
-        for j = i + 1, table.getn(classes) do
-            if classes[i] > classes[j] then
-                classes[i], classes[j] = classes[j], classes[i]
-            end
-        end
-    end
+    SortClassesByLastWord(classes)
 
     UIDropDownMenu_Initialize(classDropdown, function()
-        local index = 1
-        while classes[index] do
-            local className = classes[index]
-            local currentIndex = index  -- Capture the current index
-            local currentClassName = className  -- Capture the current class name
+        local idx = 1
+        while classes[idx] do
+            local cName = classes[idx]
+            local cIndex = idx
             local info = {}
-            info.text = className
+            local lastWord = GetLastWord(cName)
+            local color = classColors[lastWord] or "ffffff"
+            info.text = "|cff" .. color .. cName .. "|r"
             info.func = function()
-                UIDropDownMenu_SetSelectedID(classDropdown, currentIndex)
-                ConsumesManager_SelectedClass = currentClassName
+                UIDropDownMenu_SetSelectedID(classDropdown, cIndex)
+                ConsumesManager_SelectedClass = cName
                 ConsumesManager_UpdateRaidsDropdown()
                 ConsumesManager_UpdatePresetsConsumables()
             end
             UIDropDownMenu_AddButton(info)
-            index = index + 1
+            idx = idx + 1
         end
     end)
 
-    -- Extract uniqueRaids from first class
-    local uniqueRaids = {}
-    local seenRaids = {}
+    -- Build initial raid list from the first class, but we won't sort them automatically
+    -- We rely on our manual "orderedRaids" list
+    local uniqueRaids, seen = {}, {}
     local count = 0
     local firstClass = next(classPresets)
     if firstClass then
-        local classPresetsList = classPresets[firstClass]
-        for i = 1, table.getn(classPresetsList) do
-            local raidName = classPresetsList[i].raid
-            if not seenRaids[raidName] then
+        local classList = classPresets[firstClass]
+        local i = 1
+        while classList[i] do
+            local rName = classList[i].raid
+            if not seen[rName] then
                 count = count + 1
-                uniqueRaids[count] = raidName
-                seenRaids[raidName] = true
+                uniqueRaids[count] = rName
+                seen[rName] = true
             end
-        end
-    end
-
-    -- Manual sort uniqueRaids (bubble sort)
-    for i = 1, count - 1 do
-        for j = i + 1, count do
-            if uniqueRaids[i] > uniqueRaids[j] then
-                uniqueRaids[i], uniqueRaids[j] = uniqueRaids[j], uniqueRaids[i]
-            end
+            i = i + 1
         end
     end
 
@@ -1333,47 +1430,42 @@ function ConsumesManager_CreatePresetsContent(parentFrame)
             UIDropDownMenu_SetText("Select |cffffff00Raid|r", raidDropdown)
             return
         end
-
         local i = 1
-        while uniqueRaids[i] do
-            local raidName = uniqueRaids[i]
-            local currentIndex = i  -- Capture the current index
-            local currentRaidName = raidName  -- Capture the current raid name
-            local info = {}
-            info.text = raidName
-            info.func = function()
-                UIDropDownMenu_SetSelectedID(raidDropdown, currentIndex)
-                ConsumesManager_SelectedRaid = currentRaidName
-                ConsumesManager_UpdatePresetsConsumables()
+        while orderedRaids[i] do
+            local orName = orderedRaids[i]
+            if seen[orName] then
+                local cIndex = i
+                local cRaidName = orName
+                local info = {}
+                info.text = orName
+                info.func = function()
+                    UIDropDownMenu_SetSelectedID(raidDropdown, cIndex)
+                    ConsumesManager_SelectedRaid = cRaidName
+                    ConsumesManager_UpdatePresetsConsumables()
+                end
+                UIDropDownMenu_AddButton(info)
             end
-            UIDropDownMenu_AddButton(info)
             i = i + 1
         end
-
-        -- Reset the dropdown text to default after populating
         UIDropDownMenu_SetText("Select |cffffff00Raid|r", raidDropdown)
     end)
 
-    -- Do not auto-select a raid
     UIDropDownMenu_SetSelectedID(raidDropdown, 0)
 
-    -- Scroll Frame
     local scrollFrame = CreateFrame("ScrollFrame", "ConsumesManager_PresetsScrollFrame", parentFrame)
-    scrollFrame:SetPoint("TOPLEFT", classDropdown, "BOTTOMLEFT", -135, -40) -- Positioned below the dropdowns
-    scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -25, -5) -- Adjusted to fit within parentFrame
+    scrollFrame:SetPoint("TOPLEFT", classDropdown, "BOTTOMLEFT", -135, -40)
+    scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -25, -5)
     scrollFrame:EnableMouseWheel(true)
 
-    -- Scroll Child Frame
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-    scrollChild:SetWidth(parentFrame:GetWidth() - 40) -- Adjusted width
-    scrollChild:SetHeight(1)  -- Initial height
+    scrollChild:SetWidth(parentFrame:GetWidth() - 40)
+    scrollChild:SetHeight(1)
     scrollFrame:SetScrollChild(scrollChild)
     parentFrame.scrollChild = scrollChild
     parentFrame.scrollFrame = scrollFrame
 
-    -- Scroll Bar
     local scrollBar = CreateFrame("Slider", "ConsumesManager_PresetsScrollBar", parentFrame)
-    scrollBar:SetPoint("TOPRIGHT", parentFrame, "TOPRIGHT", -2, -35) -- Adjusted to be below the buttons
+    scrollBar:SetPoint("TOPRIGHT", parentFrame, "TOPRIGHT", -2, -35)
     scrollBar:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -2, 16)
     scrollBar:SetWidth(16)
     scrollBar:SetOrientation('VERTICAL')
@@ -1381,29 +1473,30 @@ function ConsumesManager_CreatePresetsContent(parentFrame)
     scrollBar:SetBackdrop({
         bgFile = "Interface\\Buttons\\UI-SliderBar-Background",
         edgeFile = "Interface\\Buttons\\UI-SliderBar-Border",
-        tile = true, tileSize = 8, edgeSize = 8,
+        tile = 1, tileSize = 8, edgeSize = 8,
         insets = { left = 3, right = 3, top = 3, bottom = 3 }
     })
     scrollBar:SetScript("OnValueChanged", function()
-        local value = this:GetValue()
-        parentFrame.scrollFrame:SetVerticalScroll(value)
+        local val = this:GetValue()
+        parentFrame.scrollFrame:SetVerticalScroll(val)
     end)
     parentFrame.scrollBar = scrollBar
-
-    -- Initially hide the scrollbar
     scrollBar:Hide()
 
-    -- OnMouseWheel Script Correction
     scrollFrame:SetScript("OnMouseWheel", function()
-        local delta = arg1
-        local current = this:GetVerticalScroll()
-        local maxScroll = this.range or 0  -- Changed from this.maxScroll to this.range
-        local newScroll = math.max(0, math.min(current - (delta * 20), maxScroll))
-        this:SetVerticalScroll(newScroll)
-        parentFrame.scrollBar:SetValue(newScroll)
+        local d = arg1
+        local cur = this:GetVerticalScroll()
+        local mx = this.range or 0
+        local new = 0
+        if d < 0 then
+            new = math.min(cur + 20, mx)
+        else
+            new = math.max(cur - 20, 0)
+        end
+        this:SetVerticalScroll(new)
+        parentFrame.scrollBar:SetValue(new)
     end)
 
-    -- Order Buttons
     local orderByNameButton = CreateFrame("Button", "ConsumesManager_PresetsOrderByNameButton", parentFrame, "UIPanelButtonTemplate")
     orderByNameButton:SetWidth(100)
     orderByNameButton:SetHeight(24)
@@ -1412,7 +1505,6 @@ function ConsumesManager_CreatePresetsContent(parentFrame)
     orderByNameButton:SetPoint("TOPLEFT", ConsumesManager_MainFrame.tabs[3], "TOPLEFT", -4, -35)
     orderByNameButton:SetScript("OnClick", function()
         if ConsumesManager_Options.presetsSortOrder == "name" then
-            -- Toggle sort direction
             if ConsumesManager_Options.presetsSortDirection == "asc" then
                 ConsumesManager_Options.presetsSortDirection = "desc"
             else
@@ -1433,7 +1525,6 @@ function ConsumesManager_CreatePresetsContent(parentFrame)
     orderByAmountButton:SetPoint("LEFT", orderByNameButton, "RIGHT", 10, 0)
     orderByAmountButton:SetScript("OnClick", function()
         if ConsumesManager_Options.presetsSortOrder == "amount" then
-            -- Toggle sort direction
             if ConsumesManager_Options.presetsSortDirection == "desc" then
                 ConsumesManager_Options.presetsSortDirection = "asc"
             else
@@ -1448,15 +1539,10 @@ function ConsumesManager_CreatePresetsContent(parentFrame)
 
     parentFrame.orderByNameButton = orderByNameButton
     parentFrame.orderByAmountButton = orderByAmountButton
-
-    -- Initially hide the order buttons
     orderByNameButton:Hide()
     orderByAmountButton:Hide()
 
-    -- Consumables List
     parentFrame.presetsConsumables = {}
-
-    -- Message Label
     local messageLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     messageLabel:SetText("|cffff0000Please select both a Raid and a Class.|r")
     messageLabel:SetPoint("CENTER", parentFrame, "CENTER", 0, 0)
@@ -1469,81 +1555,65 @@ function ConsumesManager_UpdateRaidsDropdown()
     if not raidDropdown then
         return
     end
-
-    -- Store the previously selected raid
-    local previousSelectedRaid = ConsumesManager_SelectedRaid
-
+    local prevRaid = ConsumesManager_SelectedRaid
     UIDropDownMenu_ClearAll(raidDropdown)
 
-    local uniqueRaids = {}
-    local seenRaids = {}
-    local count = 0
-
+    local uniqueRaids, seen = {}, {}
+    local c = 0
     if ConsumesManager_SelectedClass and classPresets[ConsumesManager_SelectedClass] then
-        local classPresetsList = classPresets[ConsumesManager_SelectedClass]
-        for i = 1, table.getn(classPresetsList) do
-            local raidName = classPresetsList[i].raid
-            if not seenRaids[raidName] then
-                count = count + 1
-                uniqueRaids[count] = raidName
-                seenRaids[raidName] = true
+        local clList = classPresets[ConsumesManager_SelectedClass]
+        local i = 1
+        while clList[i] do
+            local rName = clList[i].raid
+            if not seen[rName] then
+                c = c + 1
+                uniqueRaids[c] = rName
+                seen[rName] = true
             end
-        end
-    end
-
-    -- Manual sort uniqueRaids (bubble sort)
-    for i = 1, count - 1 do
-        for j = i + 1, count do
-            if uniqueRaids[i] > uniqueRaids[j] then
-                uniqueRaids[i], uniqueRaids[j] = uniqueRaids[j], uniqueRaids[i]
-            end
+            i = i + 1
         end
     end
 
     UIDropDownMenu_Initialize(raidDropdown, function()
-        if count == 0 then
+        if c == 0 then
             local info = {}
             info.text = "No Raids Available"
-            info.disabled = true
+            info.disabled = 1
             UIDropDownMenu_AddButton(info)
             UIDropDownMenu_SetText("Select |cffffff00Raid|r", raidDropdown)
             return
         end
-
         local i = 1
-        local selectedIndex = 0  -- To track if previous raid exists
-        while uniqueRaids[i] do
-            local raidName = uniqueRaids[i]
-            local currentIndex = i  -- Capture the current index
-            local currentRaidName = raidName  -- Capture the current raid name
-            local info = {}
-            info.text = raidName
-            info.func = function()
-                UIDropDownMenu_SetSelectedID(raidDropdown, currentIndex)
-                ConsumesManager_SelectedRaid = currentRaidName
-                ConsumesManager_UpdatePresetsConsumables()
+        local selectedIndex = 0
+        while orderedRaids[i] do
+            local raidName = orderedRaids[i]
+            if seen[raidName] then
+                local currentIndex = i
+                local currentRaidName = raidName
+                local info = {}
+                info.text = raidName
+                info.func = function()
+                    UIDropDownMenu_SetSelectedID(raidDropdown, currentIndex)
+                    ConsumesManager_SelectedRaid = currentRaidName
+                    ConsumesManager_UpdatePresetsConsumables()
+                end
+                UIDropDownMenu_AddButton(info)
+                if raidName == prevRaid then
+                    selectedIndex = i
+                end
             end
-            UIDropDownMenu_AddButton(info)
-
-            -- Check if this raid was previously selected
-            if raidName == previousSelectedRaid then
-                selectedIndex = i
-            end
-
             i = i + 1
         end
-
-        -- Set the dropdown to the previous selection if it exists
         if selectedIndex > 0 then
             UIDropDownMenu_SetSelectedID(raidDropdown, selectedIndex)
         else
-            -- If the previous raid isn't available, reset selection
             UIDropDownMenu_SetSelectedID(raidDropdown, 0)
             UIDropDownMenu_SetText("Select |cffffff00Raid|r", raidDropdown)
             ConsumesManager_SelectedRaid = nil
         end
     end)
 end
+
 
 function ConsumesManager_UpdatePresetsScrollBar()
     local PresetsFrame = ConsumesManager_MainFrame.tabs[3]
@@ -2089,10 +2159,9 @@ end
 
 
 
-
 -- Settings Window -----------------------------------------------------------------------------------
 function ConsumesManager_CreateSettingsContent(parentFrame)
-    -- Scroll Frame
+    -- Scroll Frame Setup
     local scrollFrame = CreateFrame("ScrollFrame", "ConsumesManager_SettingsScrollFrame", parentFrame)
     scrollFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, 0)
     scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -20, 0)
@@ -2106,7 +2175,6 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
         parentFrame.scrollBar:SetValue(newScroll)
     end)
 
-    -- Scroll Child Frame
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
     scrollChild:SetWidth(WindowWidth - 10)
     scrollChild:SetHeight(1)
@@ -2114,33 +2182,25 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
     parentFrame.scrollChild = scrollChild
     parentFrame.scrollFrame = scrollFrame
 
-    -- Initialize variables
     parentFrame.checkboxes = {}
-    local index = 0 -- Position index
-    local lineHeight = 20 -- Increased to accommodate spacing
+    local index = 0
+    local lineHeight = 20
 
-    -- Ensure settings table for characters exists
     ConsumesManager_Options["Characters"] = ConsumesManager_Options["Characters"] or {}
+    ConsumesManager_Options.enableCategories = (ConsumesManager_Options.enableCategories == nil) and true or ConsumesManager_Options.enableCategories
+    ConsumesManager_Options.showUseButton = (ConsumesManager_Options.showUseButton == nil) and true or ConsumesManager_Options.showUseButton
 
-    -- **ADDED**: Initialize enableCategories and showUseButton with default values if nil
-    ConsumesManager_Options.enableCategories = ConsumesManager_Options.enableCategories == nil and true or ConsumesManager_Options.enableCategories
-    ConsumesManager_Options.showUseButton = ConsumesManager_Options.showUseButton == nil and true or ConsumesManager_Options.showUseButton
-
-    -- Get list of characters
     local realmName = GetRealmName()
     local faction = UnitFactionGroup("player")
     local playerName = UnitName("player")
 
     local characterList = {}
-
-    -- Ensure data structure exists
     if ConsumesManager_Data[realmName] and ConsumesManager_Data[realmName][faction] then
         for characterName, _ in pairs(ConsumesManager_Data[realmName][faction]) do
             table.insert(characterList, characterName)
         end
     end
 
-    -- Ensure current character is included
     local playerInList = false
     for _, name in ipairs(characterList) do
         if name == playerName then
@@ -2152,59 +2212,47 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
         table.insert(characterList, playerName)
     end
 
-    -- Sort the character list
     table.sort(characterList)
 
-    -- Create FontString for title
+    -- Title
     local title = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, 0) -- Offset from the top
+    title:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, 0)
     title:SetText("Select Characters To Track")
     title:SetTextColor(1, 1, 1)
 
-    -- Offset index to start below the title
     local startYOffset = -20
 
-    -- For each character
+    -- Character Checkboxes
     for _, characterName in ipairs(characterList) do
         index = index + 1
-
-        -- Create a local copy of characterName for the closure
         local currentCharacterName = characterName
 
-        -- Create a frame that encompasses the checkbox and label
         local itemFrame = CreateFrame("Frame", "ConsumesManager_CharacterFrame" .. index, scrollChild)
         itemFrame:SetWidth(WindowWidth - 10)
         itemFrame:SetHeight(18)
         itemFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - (index - 1) * lineHeight)
 
-        -- Create the checkbox inside the itemFrame
         local checkbox = CreateFrame("CheckButton", "ConsumesManager_CharacterCheckbox" .. index, itemFrame)
         checkbox:SetWidth(16)
         checkbox:SetHeight(16)
         checkbox:SetPoint("LEFT", itemFrame, "LEFT", 0, 0)
 
-        -- Create Textures for the checkbox
         checkbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
         checkbox:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down")
         checkbox:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
         checkbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
 
-        -- Create FontString for label
         local label = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
         label:SetText(currentCharacterName)
         label:SetJustifyH("LEFT")
 
-        -- Set up the checkbox OnClick handler
         checkbox:SetScript("OnClick", function()
             ConsumesManager_Options["Characters"][currentCharacterName] = (checkbox:GetChecked() == 1)
             ConsumesManager_UpdateAllContent()
         end)
 
-
-        -- Load saved setting
         if ConsumesManager_Options["Characters"][currentCharacterName] == nil then
-            -- Default to checked
             checkbox:SetChecked(true)
             ConsumesManager_Options["Characters"][currentCharacterName] = true
         else
@@ -2212,27 +2260,23 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
         end
 
         parentFrame.checkboxes[currentCharacterName] = checkbox
-
-        -- Make the itemFrame clickable (so clicking on the label checks/unchecks the box)
         itemFrame:EnableMouse(true)
         itemFrame:SetScript("OnMouseDown", function()
             checkbox:Click()
         end)
     end
 
-    -- Add spacing of 20 below the character list
     index = index + 1
 
-    -- Create 'General Settings' title with spacing of 20
+    -- General Settings Title
     local generalSettingsTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     generalSettingsTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight)
     generalSettingsTitle:SetText("General Settings")
     generalSettingsTitle:SetTextColor(1, 1, 1)
 
-    -- Move index down for the checkboxes
     index = index + 1
 
-    -- Create 'Enable Categories' checkbox
+    -- Enable Categories Checkbox
     local enableCategoriesFrame = CreateFrame("Frame", "ConsumesManager_EnableCategoriesFrame", scrollChild)
     enableCategoriesFrame:SetWidth(WindowWidth - 10)
     enableCategoriesFrame:SetHeight(18)
@@ -2243,21 +2287,14 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
     enableCategoriesCheckbox:SetWidth(16)
     enableCategoriesCheckbox:SetHeight(16)
     enableCategoriesCheckbox:SetPoint("LEFT", enableCategoriesFrame, "LEFT", 0, 0)
-
     enableCategoriesCheckbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
     enableCategoriesCheckbox:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down")
     enableCategoriesCheckbox:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
     enableCategoriesCheckbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
-
-    -- **UPDATED**: Set the checkbox state based on ConsumesManager_Options.enableCategories
     enableCategoriesCheckbox:SetChecked(ConsumesManager_Options.enableCategories)
 
     enableCategoriesCheckbox:SetScript("OnClick", function()
-        if enableCategoriesCheckbox:GetChecked() then
-            ConsumesManager_Options.enableCategories = true
-        else
-            ConsumesManager_Options.enableCategories = false
-        end
+        ConsumesManager_Options.enableCategories = enableCategoriesCheckbox:GetChecked()
         ConsumesManager_UpdateAllContent()
     end)
 
@@ -2265,15 +2302,13 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
     enableCategoriesLabel:SetPoint("LEFT", enableCategoriesCheckbox, "RIGHT", 4, 0)
     enableCategoriesLabel:SetText("Enable Categories")
     enableCategoriesLabel:SetJustifyH("LEFT")
-
-    -- Make the frame clickable (so clicking on the label checks/unchecks the box)
     enableCategoriesFrame:SetScript("OnMouseDown", function()
         enableCategoriesCheckbox:Click()
     end)
 
-    index = index + 1  -- Move index down for next checkbox
+    index = index + 1
 
-    -- Create 'Show Use Button' checkbox
+    -- Show Use Button Checkbox
     local showUseButtonFrame = CreateFrame("Frame", "ConsumesManager_ShowUseButtonFrame", scrollChild)
     showUseButtonFrame:SetWidth(WindowWidth - 10)
     showUseButtonFrame:SetHeight(18)
@@ -2284,59 +2319,263 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
     showUseButtonCheckbox:SetWidth(16)
     showUseButtonCheckbox:SetHeight(16)
     showUseButtonCheckbox:SetPoint("LEFT", showUseButtonFrame, "LEFT", 0, 0)
-
     showUseButtonCheckbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
     showUseButtonCheckbox:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down")
     showUseButtonCheckbox:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
     showUseButtonCheckbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
-
-    -- **UPDATED**: Set the checkbox state based on ConsumesManager_Options.showUseButton
     showUseButtonCheckbox:SetChecked(ConsumesManager_Options.showUseButton)
+
     showUseButtonCheckbox:SetScript("OnClick", function()
-        if showUseButtonCheckbox:GetChecked() then
-            ConsumesManager_Options.showUseButton = true
-        else
-            ConsumesManager_Options.showUseButton = false
-        end
+        ConsumesManager_Options.showUseButton = showUseButtonCheckbox:GetChecked()
         ConsumesManager_UpdateAllContent()
     end)
-
 
     local showUseButtonLabel = showUseButtonFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     showUseButtonLabel:SetPoint("LEFT", showUseButtonCheckbox, "RIGHT", 4, 0)
     showUseButtonLabel:SetText("Show Use Button")
     showUseButtonLabel:SetJustifyH("LEFT")
-
-    -- Make the frame clickable (so clicking on the label checks/unchecks the box)
     showUseButtonFrame:SetScript("OnMouseDown", function()
         showUseButtonCheckbox:Click()
     end)
 
-    index = index + 1  -- Move index down after adding General Settings
+    index = index + 1
 
-    -- Add 'Reset Addon' Button
-    local resetButton = CreateFrame("Button", "ConsumesManager_ResetButton", scrollChild, "UIPanelButtonTemplate")
+    -- Multi-Account Setup
+    local multiAccountTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    multiAccountTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 20)
+    multiAccountTitle:SetText("Multi-Account Setup |cffff0000(BETA!)|r")
+    multiAccountTitle:SetTextColor(1, 1, 1)
+
+    index = index + 1
+
+    local multiAccountInfo = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    multiAccountInfo:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 20)
+    multiAccountInfo:SetText("Set a unique channel name and password. \nRepeat this setup for each of your alt-accounts.")
+    multiAccountInfo:SetJustifyH("LEFT")
+
+    index = index + 2
+
+    -- More Info Button
+    local popup = MultiAccountInfoPopup()
+    local MoreInfoBtn = CreateFrame("Button", "ConsumesManager_MoreInfoBtn", scrollChild, "UIPanelButtonTemplate")
+    MoreInfoBtn:SetWidth(70)
+    MoreInfoBtn:SetHeight(20)
+    MoreInfoBtn:SetText("More Info")
+    MoreInfoBtn:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 10)
+    MoreInfoBtn:SetScript("OnClick", function()
+        if popup:IsShown() then
+            popup:Hide()
+        else
+            popup:Show()
+        end
+    end)
+
+    index = index + 1
+
+    -- Channel Input
+    local channelLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    channelLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 20)
+    channelLabel:SetText("Channel:")
+    channelLabel:SetWidth(60)
+    channelLabel:SetJustifyH("LEFT")
+    channelLabel:SetTextColor(1, 1, 1)
+
+    -- Create a frame to hold the editbox so the sub-textures stay aligned
+    local channelFrame = CreateFrame("Frame", nil, scrollChild)
+    channelFrame:SetHeight(20)
+    channelFrame:SetWidth(140)
+    channelFrame:SetPoint("LEFT", channelLabel, "RIGHT", 10, 0)
+
+    local channelEditBox = CreateFrame("EditBox", "ConsumesManager_ChannelEditBox", channelFrame, "InputBoxTemplate")
+    channelEditBox:SetAutoFocus(false)
+    channelEditBox:SetMaxLetters(50)
+    channelEditBox:SetAllPoints(channelFrame) -- Fill the entire holding frame
+
+    local leftTex = getglobal(channelEditBox:GetName().."Left")
+    local midTex  = getglobal(channelEditBox:GetName().."Middle")
+    local rightTex= getglobal(channelEditBox:GetName().."Right")
+
+    -- Anchor them so they move with the EditBox
+    if leftTex then
+        leftTex:ClearAllPoints()
+        leftTex:SetPoint("LEFT", channelEditBox, "LEFT", -5, 0)
+    end
+    if midTex then
+        midTex:ClearAllPoints()
+        midTex:SetPoint("LEFT", leftTex, "RIGHT", 0, 0)
+        midTex:SetPoint("RIGHT", rightTex, "LEFT", 0, 0)
+    end
+    if rightTex then
+        rightTex:ClearAllPoints()
+        rightTex:SetPoint("RIGHT", channelEditBox, "RIGHT", 5, 0)
+    end
+
+    -- Retrieve stored channel
+    local stored_channel = ""
+    if ConsumesManager_Options.Channel and ConsumesManager_Options.Channel ~= "" then
+        stored_channel = DecodeMessage(ConsumesManager_Options.Channel)
+    end
+    channelEditBox:SetText(stored_channel)
+
+    index = index + 1
+
+    -- Password Input
+    local passwordLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    passwordLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 20)
+    passwordLabel:SetText("Password:")
+    passwordLabel:SetWidth(60)
+    passwordLabel:SetJustifyH("LEFT")
+    passwordLabel:SetTextColor(1, 1, 1)
+
+    -- Same holding frame approach
+    local passwordFrame = CreateFrame("Frame", nil, scrollChild)
+    passwordFrame:SetHeight(20)
+    passwordFrame:SetWidth(140)
+    passwordFrame:SetPoint("LEFT", passwordLabel, "RIGHT", 10, 0)
+
+    local passwordEditBox = CreateFrame("EditBox", "ConsumesManager_PasswordEditBox", passwordFrame, "InputBoxTemplate")
+    passwordEditBox:SetAutoFocus(false)
+    passwordEditBox:SetMaxLetters(50)
+    passwordEditBox:SetAllPoints(passwordFrame)
+
+    local pLeft = getglobal(passwordEditBox:GetName().."Left")
+    local pMid  = getglobal(passwordEditBox:GetName().."Middle")
+    local pRight= getglobal(passwordEditBox:GetName().."Right")
+
+    if pLeft then
+        pLeft:ClearAllPoints()
+        pLeft:SetPoint("LEFT", passwordEditBox, "LEFT", -5, 0)
+    end
+    if pMid then
+        pMid:ClearAllPoints()
+        pMid:SetPoint("LEFT", pLeft, "RIGHT", 0, 0)
+        pMid:SetPoint("RIGHT", pRight, "LEFT", 0, 0)
+    end
+    if pRight then
+        pRight:ClearAllPoints()
+        pRight:SetPoint("RIGHT", passwordEditBox, "RIGHT", 5, 0)
+    end
+
+    local stored_password = ""
+    if ConsumesManager_Options.Password and ConsumesManager_Options.Password ~= "" then
+        stored_password = DecodeMessage(ConsumesManager_Options.Password)
+    end
+    passwordEditBox:SetText(stored_password)
+
+    index = index + 1
+
+    -- Join and Leave Channel Buttons
+    joinChannelButton = CreateFrame("Button", "ConsumesManager_JoinChannelButton", scrollChild, "UIPanelButtonTemplate")
+    joinChannelButton:SetWidth(140)
+    joinChannelButton:SetHeight(24)
+    joinChannelButton:SetText("Save & Join Channel")
+    joinChannelButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 25)
+
+    LeaveChannelButton = CreateFrame("Button", "ConsumesManager_LeaveChannelButton", scrollChild, "UIPanelButtonTemplate")
+    LeaveChannelButton:SetWidth(140)
+    LeaveChannelButton:SetHeight(24)
+    LeaveChannelButton:SetText("Leave Channel")
+    LeaveChannelButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 140, startYOffset - index * lineHeight - 25)
+
+    -- Function to Update Leave Button State
+    local function UpdateLeaveButtonState()
+        if ConsumesManager_Options.Channel == "" or ConsumesManager_Options.Channel == nil then
+            LeaveChannelButton:Disable()
+            LeaveChannelButton:SetAlpha(0.5)
+            channelEditBox:SetText("")
+            passwordEditBox:SetText("")
+        else
+            LeaveChannelButton:Enable()
+            LeaveChannelButton:SetAlpha(1)
+        end
+    end
+
+    UpdateLeaveButtonState()
+
+    -- Leave Channel Button Script
+    LeaveChannelButton:SetScript("OnClick", function()
+        if ConsumesManager_Options.Channel == "" or ConsumesManager_Options.Channel == nil then
+            UpdateLeaveButtonState()
+            updateSenDataButtonState()
+        else
+            local decoded_channel = DecodeMessage(ConsumesManager_Options.Channel)
+            DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") .. ":|r |cffffffffYou left|r |cffffc0c0[" .. decoded_channel .. "]|r|cffffffff. Multi-account sync |cffff0000disabled|r|cffffffff.|r")
+            LeaveChannelByName(decoded_channel)
+            ConsumesManager_Options.Channel = nil
+            ConsumesManager_Options.Password = nil
+            UpdateLeaveButtonState()
+            updateSenDataButtonState()
+            channelErrorMessage:Hide()
+        end
+    end)
+
+    -- Channel Error Message
+    local channelErrorMessage = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    channelErrorMessage:SetPoint("TOPLEFT", joinChannelButton, "BOTTOMLEFT", 0, -5)
+    channelErrorMessage:SetTextColor(1, 0, 0)
+    channelErrorMessage:SetText("Failed to join channel. Read chat for more info.")
+    channelErrorMessage:Hide()
+
+    -- Function to Update Join Button State
+    local function UpdateJoinButtonState()
+        local ctext = channelEditBox:GetText()
+        local ptext = passwordEditBox:GetText()
+        if ctext ~= "" and ptext ~= "" then
+            joinChannelButton:Enable()
+            joinChannelButton:SetAlpha(1)
+        else
+            joinChannelButton:Disable()
+            joinChannelButton:SetAlpha(0.5)
+        end
+    end
+
+    channelEditBox:SetScript("OnTextChanged", UpdateJoinButtonState)
+    passwordEditBox:SetScript("OnTextChanged", UpdateJoinButtonState)
+
+    UpdateJoinButtonState()
+
+    -- Function to Handle Channel Join Failures
+    function ConsumesManager_ChannelJoinFailed(error_message)
+        ConsumesManager_Options.Channel = nil
+        ConsumesManager_Options.Password = nil
+        channelEditBox:SetText("")
+        passwordEditBox:SetText("")
+        UpdateJoinButtonState()
+        channelErrorMessage:Show()
+        channelErrorMessage:SetText(error_message)
+    end
+
+    index = index + 3
+
+    -- Danger Zone Title
+    local DangerZonTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    DangerZonTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 30)
+    DangerZonTitle:SetText("Danger Zone")
+    DangerZonTitle:SetTextColor(1, 1, 1)
+
+    index = index + 2
+
+    -- Reset Addon Button
+    resetButton = CreateFrame("Button", "ConsumesManager_ResetButton", scrollChild, "UIPanelButtonTemplate")
     resetButton:SetWidth(120)
     resetButton:SetHeight(24)
     resetButton:SetText("Reset Addon")
-    resetButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 20)
-
+    resetButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 10)
     resetButton:SetScript("OnClick", function()
-        -- Reset saved variables
+        if ConsumesManager_Options.Channel then 
+            local decoded_channel = DecodeMessage(ConsumesManager_Options.Channel)
+            LeaveChannelByName(decoded_channel)
+        end
         ConsumesManager_Options = {}
         ConsumesManager_SelectedItems = {}
         ConsumesManager_Data = {}
-        -- Reload UI
         ReloadUI()
     end)
 
-    index = index + 1  -- Move index down after adding Reset Button
-
-    -- Adjust the scroll child height
-    scrollChild.contentHeight = math.abs(startYOffset) + index * lineHeight + 40
+    scrollChild.contentHeight = math.abs(startYOffset) + index * lineHeight + 100
     scrollChild:SetHeight(scrollChild.contentHeight)
 
-    -- Scroll Bar
+    -- Scroll Bar Setup
     local scrollBar = CreateFrame("Slider", "ConsumesManager_SettingsScrollBar", parentFrame)
     scrollBar:SetPoint("TOPRIGHT", parentFrame, "TOPRIGHT", -2, -16)
     scrollBar:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -2, 16)
@@ -2350,19 +2589,268 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
         insets = { left = 3, right = 3, top = 3, bottom = 3 }
     })
     scrollBar:SetScript("OnValueChanged", function()
-        local value = scrollBar:GetValue() -- **RESTORED** this line
+        local value = this:GetValue()
         scrollFrame:SetVerticalScroll(value)
     end)
     parentFrame.scrollBar = scrollBar
 
-    -- Update the scrollbar
     ConsumesManager_UpdateSettingsScrollBar()
+
+
+    if not ConsumesManager_ChannelFrame then
+        ConsumesManager_ChannelFrame = CreateFrame("Frame", "ConsumesManager_ChannelFrame")
+    end
+
+    local channelmsg = ""
+
+    joinChannelButton:SetScript("OnClick", function()
+
+        ConsumesManager_ChannelFrame:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
+
+        channelErrorMessage:Hide()
+        local ctext = channelEditBox:GetText()
+        local ptext = passwordEditBox:GetText()
+        local final_result = nil
+        local try_again = false
+
+         ConsumesManager_ChannelFrame:SetScript("OnEvent", function()
+            local noticeType = string.upper(arg1 or "")
+            local channelName = string.upper(arg9 or "")
+            local inputChannelName = string.upper(ctext or "")
+
+            if noticeType == "WRONG_PASSWORD" and channelName == inputChannelName then
+                channelmsg = "WRONG_PASSWORD"
+                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+            elseif noticeType == "NOT_MODERATOR" and channelName == inputChannelName then
+                channelmsg = "NOT_MODERATOR"
+                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+            elseif noticeType == "YOU_JOINED" and channelName == inputChannelName then
+                channelmsg = "YOU_JOINED"
+                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+            end
+
+        end)
+
+
+        -- Don't join same channel
+        if ConsumesManager_Options.Channel then
+            if DecodeMessage(ConsumesManager_Options.Channel) == ctext then
+                channelErrorMessage:SetText("Already in this channel")
+                channelErrorMessage:Show()
+                return
+            end
+        end
+
+        -- Block attempts to join big system channels
+        local blocked = { "world", "general", "localdefense", "hardcore", "lft", "trade" }
+        local lowerChannel = string.lower(ctext)
+        for _, b in pairs(blocked) do
+            if lowerChannel == b then
+                ConsumesManager_ChannelJoinFailed("You cannot use a global channel")
+                return
+            end
+        end
+
+        JoinChannelByName(ctext, ptext)
+
+        joinChannelButton:SetText("Connecting... (4)")
+        joinChannelButton:Disable()
+        joinChannelButton:SetAlpha(0.5)
+
+
+        local delayFrame = CreateFrame("Frame")
+        delayFrame:Show()
+        local elapsed = 0
+        local delay = 5
+        local one_attempt = 0
+
+        delayFrame:SetScript("OnUpdate", function()
+            
+
+            if elapsed > 1 and elapsed < 2 then
+
+                joinChannelButton:SetText("Connecting... (3)")
+
+                if one_attempt == 0 then
+
+                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+
+                    if channelmsg == "WRONG_PASSWORD" then
+                        final_result = "WRONG_PASSWORD"
+                    elseif channelmsg == "YOU_JOINED" then
+                        DEFAULT_CHAT_FRAME:AddMessage("setting password")
+                        SetChannelPassword(ctext, ptext)
+                    end
+                end
+
+                one_attempt = 1
+
+
+            elseif elapsed > 2 and elapsed < 3 then
+                joinChannelButton:SetText("Connecting... (2)")
+
+
+                if one_attempt == 1 then
+
+                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+
+                    if channelmsg == "YOU_JOINED" then
+                        final_result = "SUCCESS"
+                    elseif channelmsg == "NOT_MODERATOR" then
+                        LeaveChannelByName(ctext)
+                        try_again = true
+                    end
+                end
+
+                one_attempt = 2
+
+
+
+            elseif elapsed > 3 and elapsed < 4 then
+                joinChannelButton:SetText("Connecting... (1)")
+
+                if one_attempt == 2 then
+
+                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+
+                    if try_again == true then
+
+                        JoinChannelByName(ctext, ptext)
+
+                    end
+                 end
+
+                one_attempt = 3
+
+            elseif elapsed > 4 and elapsed < 5 then
+                joinChannelButton:SetText("Connecting... (0)")
+
+                if one_attempt == 3 then
+
+                    DEFAULT_CHAT_FRAME:AddMessage("message: " .. channelmsg)
+
+                    if try_again == true then
+
+                        if channelmsg == "YOU_JOINED" then
+                            final_result = "SUCCESS"
+                        elseif channelmsg == "NOT_MODERATOR" then
+                            final_result = "NOT_MODERATOR"
+                        end
+                    end
+                 end
+
+                one_attempt = 4
+
+            end
+
+
+
+            elapsed = elapsed + arg1
+
+            if elapsed >= delay then
+
+                delayFrame:SetScript("OnUpdate", nil)
+                delayFrame:Hide()
+
+
+                -- ACTION AFTER 3 SECONDS
+
+
+                if final_result == "SUCCESS" then
+
+                    ConsumesManager_Options.Channel = EncodeMessage(ctext)
+                    ConsumesManager_Options.Password = EncodeMessage(ptext)
+
+                    DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") ..
+                    ":|r |cffffffffYou joined|r |cffffc0c0[" .. ctext ..
+                    "]|r|cffffffff. Multi-account sync |cff00ff00enabled|r|cffffffff.|r")
+
+                elseif final_result == "WRONG_PASSWORD" then
+
+                    ConsumesManager_ChannelJoinFailed("Wrong password. Try again.")
+
+                    DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") ..
+                    ":|r |cffffffffWrong password for|r |cffffc0c0[" .. ctext ..
+                    "]|r|cffffffff. Multi-account sync |cffff0000disabled|r|cffffffff.|r")
+
+                elseif final_result == "NOT_MODERATOR" then
+
+                    ConsumesManager_ChannelJoinFailed("This is not your channel.")
+                    DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") ..
+                    ":|r |cffffffffYou don't own|r |cffffc0c0[" .. ctext ..
+                    "]|r|cffffffff. Multi-account sync |cffff0000disabled|r|cffffffff.|r")
+
+                else
+                    LeaveChannelByName(ctext)
+                    ConsumesManager_ChannelJoinFailed("Unknown error")
+                    DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") ..
+                    ":|r |cffffffffFailed to join|r |cffffc0c0[" .. ctext ..
+                    "]|r|cffffffff. Multi-account sync |cffff0000disabled|r|cffffffff.|r")
+                end
+
+                joinChannelButton:SetText("Save & Join Channel")
+                joinChannelButton:Enable()
+                joinChannelButton:SetAlpha(1)
+                updateSenDataButtonState()
+                UpdateLeaveButtonState()
+
+                ConsumesManager_ChannelFrame:UnregisterEvent("CHAT_MSG_CHANNEL_NOTICE")
+
+            end
+            delayFrame:Show()
+        end)
+    end)
+
+
+
+
+
+
+
 end
 
+function ConsumesManager_UpdateSettingsContent()
+    local parentFrame = ConsumesManager_MainFrame and ConsumesManager_MainFrame.tabs and ConsumesManager_MainFrame.tabs[4]
+    if not parentFrame or not parentFrame.scrollFrame then
+        return
+    end
+
+    -- Remove existing child
+    local oldChild = parentFrame.scrollFrame:GetScrollChild()
+    if oldChild then
+        oldChild:Hide()
+        oldChild:SetParent(nil)
+        parentFrame.scrollFrame:SetScrollChild(nil)
+    end
+
+    -- Remove old scrollbar
+    if parentFrame.scrollBar then
+        parentFrame.scrollBar:Hide()
+        parentFrame.scrollBar:SetParent(nil)
+        parentFrame.scrollBar = nil
+    end
+
+    -- New scroll child
+    local newScrollChild = CreateFrame("Frame", nil, parentFrame.scrollFrame)
+    newScrollChild:SetWidth(WindowWidth - 10)
+    newScrollChild:SetHeight(1)
+    newScrollChild.contentHeight = 0
+    parentFrame.scrollFrame:SetScrollChild(newScrollChild)
+    parentFrame.scrollChild = newScrollChild
+
+    -- Build content
+    ConsumesManager_CreateSettingsContent(parentFrame)
+
+    -- Reset scroll
+    if parentFrame.scrollBar then
+        parentFrame.scrollBar:SetValue(0)
+    end
+end
+
+
 function ConsumesManager_UpdateSettingsScrollBar()
-    local OptionsFrame = ConsumesManager_MainFrame.tabs[4]  -- Corrected indexing
+    local OptionsFrame = ConsumesManager_MainFrame and ConsumesManager_MainFrame.tabs and ConsumesManager_MainFrame.tabs[4]
     if not OptionsFrame then
-        print("Error: OptionsFrame (tabs[4]) is nil in UpdateSettingsScrollBar")
         return
     end
     local scrollBar = OptionsFrame.scrollBar
@@ -2370,7 +2858,7 @@ function ConsumesManager_UpdateSettingsScrollBar()
     local scrollChild = OptionsFrame.scrollChild
 
     local totalHeight = scrollChild.contentHeight
-    local shownHeight = 320  -- Adjust based on your UI
+    local shownHeight = 420
 
     local maxScroll = math.max(0, totalHeight - shownHeight)
     scrollFrame.maxScroll = maxScroll
@@ -2386,6 +2874,7 @@ function ConsumesManager_UpdateSettingsScrollBar()
         scrollBar:Hide()
     end
 end
+
 
 
 
@@ -2492,8 +2981,8 @@ end
 function ConsumesManager_UpdateAllContent()
     ConsumesManager_UpdateManagerContent()
     ConsumesManager_UpdatePresetsConsumables()
+    ConsumesManager_UpdateSettingsContent()
 end
-
 
 function ConsumesManager_DisableTab(tab)
     tab.isEnabled = false
@@ -2568,8 +3057,68 @@ function ConsumesManager_UpdateTabStates()
     end
 end
 
+function MultiAccountInfoPopup()
+    -- Create the frame
+    local popup = CreateFrame("Frame", "MyPopupFrame", UIParent)
+    popup:SetHeight(180)
+    popup:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    popup:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground", -- Solid black background
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = false,
+        tileSize = 0,
+        edgeSize = 32,
+        insets = { left = 8, right = 8, top = 8, bottom = 8 }
+    })
+    popup:SetBackdropColor(0, 0, 0, 1) -- Black background with full opacity
+    popup:SetBackdropBorderColor(1, 1, 1, 1) -- White border
+    popup:SetFrameStrata("DIALOG")
+    popup:SetFrameLevel(1000)
+    popup:SetMovable(true)
+    popup:EnableMouse(true)
+    popup:RegisterForDrag("LeftButton")
+    popup:SetScript("OnDragStart", function()
+        this:StartMoving()
+    end)
+    popup:SetScript("OnDragStop", function()
+        this:StopMovingOrSizing()
+    end)
+
+    -- Add a close button
+    local closeButton = CreateFrame("Button", nil, popup, "UIPanelCloseButton")
+    closeButton:SetPoint("TOPRIGHT", popup, "TOPRIGHT", -5, -5)
+
+    -- Add a title
+    local infotitle = popup:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    infotitle:SetPoint("TOPLEFT", popup, "TOPLEFT", 20, -20)
+    infotitle:SetText("How does it work?")
+    infotitle:SetTextColor(1,1,1)
+
+    -- Add the infotext
+    popup.infotext = popup:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    popup.infotext:SetPoint("TOPLEFT", popup, "TOPLEFT", 20, -35)
+    popup.infotext:SetJustifyH("LEFT")
+    popup.infotext:SetText(
+        "|cffff0000(Beta Feature! Might be glitchy!)|r\n\n" ..
+        "To sync accounts, follow these steps:\n\n" ..
+        "1. Join a private channel with a unique name and password.\n" ..
+        "2. The channel info is saved for all characters on your account.\n" ..
+        "3. Log into your alt account on a second client.\n" ..
+        "4. Join the same channel via this addon to link both accounts.\n" ..
+        "5. Keep one character from your main account online for syncing.\n" ..
+        "6. Click on 'Push Data' to send the database from one account to all the other that are online."
+    )
 
 
+    -- Function to adjust width dynamically after text is set
+    popup:SetScript("OnShow", function()
+        local textWidth = popup.infotext:GetStringWidth() + 40 -- Add padding
+        popup:SetWidth(textWidth)
+    end)
+
+    popup:Hide()
+    return popup
+end
 
 
 
@@ -2616,9 +3165,14 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
         -- Content text
         local content = tooltipFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         content:SetPoint("TOPLEFT", icon, "BOTTOMLEFT", 0, -10)
-        
         content:SetJustifyH("LEFT")
         tooltipFrame.content = content
+
+        -- Mats text
+        local mats = tooltipFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        mats:SetPoint("TOPLEFT", content, "BOTTOMLEFT", 0, -10)
+        mats:SetJustifyH("LEFT")
+        tooltipFrame.mats = mats
 
         ConsumesManager_CustomTooltip = tooltipFrame
     end
@@ -2628,13 +3182,39 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
     -- Get item info
     local itemName = consumablesList[itemID] or "Unknown Item"
     local itemTexture = consumablesTexture[itemID] or "Interface\\Icons\\INV_Misc_QuestionMark"
+   
 
     -- Set icon and title
     tooltipFrame.icon:SetTexture(itemTexture)
     tooltipFrame.title:SetText(itemName)
 
+    local mats = consumablesMats[itemID] or {}
+    local matsText = ""
+
+    if type(mats) == "table" and next(mats) then
+        local index = 0
+        local divider = ""
+        for _, mat in ipairs(mats) do
+            index = index + 1
+            if index > 1 then
+                divider = " | "
+            else
+                divider = ""
+            end
+
+            matsText =   matsText .. divider .. "|cff4ac9ff" .. mat .. "|r" 
+        end
+    else
+        matsText = "|cff696969No materials specified for this item.|r"
+    end
+
+    tooltipFrame.mats:SetText(matsText)
+
+  
+
     -- Prepare content text
     local contentText = ""
+    local matsText = ""
 
     local realmName = GetRealmName()
     local faction = UnitFactionGroup("player")
@@ -2696,7 +3276,9 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
 
     if not hasItems then
         contentText = contentText .. "|cffff0000No items found for this consumable.|r"
+        lineHeightAdjust = 10
     else
+        lineHeightAdjust = 0
         -- Sort characters alphabetically
         table.sort(characterList, function(a, b) return a.name < b.name end)
 
@@ -2728,11 +3310,11 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
 
     -- Adjust tooltip height based on the number of lines
     local lineHeightTooltip = 12
-    local totalHeight = 50 + (numLines * lineHeightTooltip)
+    local totalHeight = 60 + (numLines * lineHeightTooltip) + lineHeightAdjust
     tooltipFrame:SetHeight(totalHeight)
 
     -- Set the width based on content
-    local titleWidth = tooltipFrame.title:GetStringWidth() + 70
+    local titleWidth = math.max(tooltipFrame.mats:GetStringWidth() + 20, tooltipFrame.title:GetStringWidth() + 60)
     local maxWidth = math.max(titleWidth, tooltipFrame.content:GetStringWidth() + 20)
     tooltipFrame:SetWidth(maxWidth)
 
@@ -2782,6 +3364,12 @@ function ConsumesManager_ShowItemsTooltip(itemID)
         description:SetTextColor(1, 1, 1)
         tooltipFrame.description = description
 
+        -- Mats text
+        local mats = tooltipFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        mats:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -10)
+        mats:SetJustifyH("LEFT")
+        tooltipFrame.mats = mats
+
         ConsumesManager_ItemsTooltip = tooltipFrame
     end
 
@@ -2797,17 +3385,39 @@ function ConsumesManager_ShowItemsTooltip(itemID)
     tooltipFrame.title:SetText(itemName)
     tooltipFrame.description:SetText(itemDescription)
 
+        local mats = consumablesMats[itemID] or {}
+    local matsText = ""
+
+    if type(mats) == "table" and next(mats) then
+        local index = 0
+        local divider = ""
+        for _, mat in ipairs(mats) do
+            index = index + 1
+            if index > 1 then
+                divider = " | "
+            else
+                divider = ""
+            end
+
+            matsText =   matsText .. divider .. "|cff4ac9ff" .. mat .. "|r" 
+        end
+    else
+        matsText = "|cff696969No materials specified for this item.|r"
+    end
+
+    tooltipFrame.mats:SetText(matsText)
+
     -- Adjust the height of the description based on its content
     tooltipFrame.description:SetWidth(maxDescriptionWidth)
     tooltipFrame.description:SetText(itemDescription)
     local descriptionHeight = tooltipFrame.description:GetHeight()
 
     -- Adjust tooltip height based on content
-    local totalHeight = 70 + descriptionHeight
+    local totalHeight = 80 + descriptionHeight
     tooltipFrame:SetHeight(totalHeight)
 
     -- Set the width of the tooltip
-    local titleWidth = tooltipFrame.title:GetStringWidth() + 70
+    local titleWidth = math.max(tooltipFrame.title:GetStringWidth() + 70, tooltipFrame.mats:GetStringWidth() + 20)
     local maxWidth = math.max(titleWidth, maxDescriptionWidth + 20)
     tooltipFrame:SetWidth(maxWidth)
 
@@ -2831,21 +3441,18 @@ end
 
 
 
-
 -- Scan Functions ---------------------------------------------------------------------------------------
 function ConsumesManager_ScanPlayerInventory()
     local playerName = UnitName("player")
     local realmName = GetRealmName()
     local faction = UnitFactionGroup("player")
 
-    -- Initialize data structures
     ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
     ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
     ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
     local data = ConsumesManager_Data[realmName][faction][playerName]
     data["inventory"] = {}
 
-    -- Scan all bags (0 to 4 represent backpack and additional bags)
     for bag = 0, 4 do
         local numSlots = GetContainerNumSlots(bag)
         if numSlots then
@@ -2855,10 +3462,11 @@ function ConsumesManager_ScanPlayerInventory()
                     local _, _, itemID = string.find(link, "item:(%d+)")
                     if itemID then
                         itemID = tonumber(itemID)
-                        -- Scan all items, regardless of selection
-                        local texture, itemCount = GetContainerItemInfo(bag, slot)
-                        if itemCount and itemCount > 0 then
-                            data["inventory"][itemID] = (data["inventory"][itemID] or 0) + itemCount
+                        if consumablesList[itemID] then
+                            local _, itemCount = GetContainerItemInfo(bag, slot)
+                            if itemCount and itemCount > 0 then
+                                data["inventory"][itemID] = (data["inventory"][itemID] or 0) + itemCount
+                            end
                         end
                     end
                 end
@@ -2866,14 +3474,12 @@ function ConsumesManager_ScanPlayerInventory()
         end
     end
 
-    -- Update the Manager window and use buttons
     ConsumesManager_UpdateUseButtons()
     ConsumesManager_UpdateManagerContent()
     ConsumesManager_UpdateTabStates()
 end
 
 function ConsumesManager_ScanPlayerBank()
-    -- Ensure the BankFrame is open before scanning
     if not BankFrame or not BankFrame:IsShown() then
         return
     end
@@ -2882,14 +3488,12 @@ function ConsumesManager_ScanPlayerBank()
     local realmName = GetRealmName()
     local faction = UnitFactionGroup("player")
 
-    -- Initialize data structures
     ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
     ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
     ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
     local data = ConsumesManager_Data[realmName][faction][playerName]
     data["bank"] = {}
 
-    -- In WoW 1.12, bank bags are -1 and 5 to 10
     for bag = -1, 10 do
         if bag == -1 or (bag >= 5 and bag <= 10) then
             local numSlots = GetContainerNumSlots(bag)
@@ -2900,10 +3504,11 @@ function ConsumesManager_ScanPlayerBank()
                         local _, _, itemID = string.find(link, "item:(%d+)")
                         if itemID then
                             itemID = tonumber(itemID)
-                            -- Scan all items, regardless of selection
-                            local texture, itemCount = GetContainerItemInfo(bag, slot)
-                            if itemCount and itemCount > 0 then
-                                data["bank"][itemID] = (data["bank"][itemID] or 0) + itemCount
+                            if consumablesList[itemID] then
+                                local _, itemCount = GetContainerItemInfo(bag, slot)
+                                if itemCount and itemCount > 0 then
+                                    data["bank"][itemID] = (data["bank"][itemID] or 0) + itemCount
+                                end
                             end
                         end
                     end
@@ -2912,13 +3517,11 @@ function ConsumesManager_ScanPlayerBank()
         end
     end
 
-    -- Update the Manager window
     ConsumesManager_UpdateManagerContent()
     ConsumesManager_UpdateTabStates()
 end
 
 function ConsumesManager_ScanPlayerMail()
-    -- Ensure the MailFrame is open before scanning
     if not MailFrame or not MailFrame:IsShown() then
         return
     end
@@ -2927,7 +3530,6 @@ function ConsumesManager_ScanPlayerMail()
     local realmName = GetRealmName()
     local faction = UnitFactionGroup("player")
 
-    -- Initialize data structures
     ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
     ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
     ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
@@ -2937,19 +3539,468 @@ function ConsumesManager_ScanPlayerMail()
     local numInboxItems = GetInboxNumItems()
     if numInboxItems and numInboxItems > 0 then
         for mailIndex = 1, numInboxItems do
-            local itemName, itemTexture, itemCount, itemQuality = GetInboxItem(mailIndex)
+            local itemName, _, itemCount = GetInboxItem(mailIndex)
             if itemName and itemCount and itemCount > 0 then
-                -- Since GetInboxItemLink is not available in 1.12, use itemName to get itemID
                 local itemID = consumablesNameToID[itemName]
-                if itemID then
-                    -- Scan all items, regardless of selection
+                if itemID and consumablesList[itemID] then
                     data["mail"][itemID] = (data["mail"][itemID] or 0) + itemCount
                 end
             end
         end
     end
 
-    -- Update the Manager window
     ConsumesManager_UpdateManagerContent()
     ConsumesManager_UpdateTabStates()
 end
+
+
+
+
+-- Multi-Account Data Handling --------------------------------------------------------------------------
+
+
+    local Converter = LibStub("LibCompress", true)
+
+
+-- SEND DATA
+    local countdownFrame = CreateFrame("Frame")
+    countdownFrame:Hide()
+    local countdownTimer = 0
+    local Syncing = false
+    local ProgressBar = 0
+    local total_time_stored = 0
+    local BarHeight = 0
+
+    local function SyncInProgress(syncing, totalTime)
+        if syncing then
+            sendDataButton:Disable()
+            sendDataButton.icon:SetDesaturated(true)
+            LeaveChannelButton:Disable()
+            LeaveChannelButton:SetAlpha(0.5)
+            joinChannelButton:Disable()
+            joinChannelButton:SetAlpha(0.5)
+            resetButton:Disable()
+            resetButton:SetAlpha(0.5)
+
+            ProgressBarFrame:Show()
+            ProgressBarFrame_fill:Show()
+            ProgressBarFrame_Text:Show()
+
+            ProgressBar = totalTime
+            if total_time_stored == 0 then
+                total_time_stored = totalTime
+            end
+            countdownTimer = 0
+            BarHeight = 0
+            ProgressBarFrame_fill:SetHeight(0)
+
+            countdownFrame:Show()
+        else
+            sendDataButton:Enable()
+            sendDataButton.icon:SetDesaturated(false)
+            LeaveChannelButton:Enable()
+            LeaveChannelButton:SetAlpha(1)
+            joinChannelButton:Enable()
+            joinChannelButton:SetAlpha(1)
+            resetButton:Enable()
+            resetButton:SetAlpha(1)
+
+            ProgressBarFrame:Hide()
+            ProgressBarFrame_Text:Hide()
+            ProgressBarFrame_fill:SetHeight(0)
+            ProgressBar = 0
+            total_time_stored = 0
+            BarHeight = 0
+            ProgressBarFrame_fill:Hide()
+
+            countdownFrame:Hide()
+        end
+        Syncing = syncing
+    end
+
+    countdownFrame:SetScript("OnUpdate", function()
+        if Syncing and ProgressBar > 0 then
+            countdownTimer = countdownTimer + arg1
+            if countdownTimer >= 1 then
+                ProgressBar = ProgressBar - 1
+                if BarHeight < 492 then
+                    BarHeight = 492 - (492 / (total_time_stored - 1)) * (ProgressBar - 1)
+                    if BarHeight > 492 then
+                        BarHeight = 492
+                    end
+                end
+                ProgressBarFrame_fill:SetHeight(BarHeight)
+                countdownTimer = 0
+            end
+        end
+    end)
+
+    function PushData()
+        if not ConsumesManager_Options.Channel or ConsumesManager_Options.Channel == "" or
+           not ConsumesManager_Options.Password or ConsumesManager_Options.Password == "" then
+            return
+        end
+
+        local realmName = GetRealmName()
+        local faction = UnitFactionGroup("player")
+        local dataTable = ConsumesManager_Data[realmName][faction]
+        local serialized = Converter:TableToString(dataTable)
+        local compressed = lzw:compress(serialized)
+        local data = EncodeMessage(compressed)
+
+        local channelName = DecodeMessage(ConsumesManager_Options.Channel)
+        local channelNumber = GetChannelName(channelName)
+        local length = string.len(data)
+        local chunkSize = 100
+        local pos = 1
+        local queue = {}
+        while pos <= length do
+            local chunk = string.sub(data, pos, pos + chunkSize - 1)
+            pos = pos + chunkSize
+            table.insert(queue, chunk)
+        end
+
+        local totalMessages = table.getn(queue)
+        DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") .. ":|r |cffffffffData pushing started in|r |cffffc0c0[" .. DecodeMessage(ConsumesManager_Options.Channel) .. "]|r|cffffffff. Please wait...|r")
+        SendChatMessage("CM_SYNC_STARTED", "CHANNEL", nil, channelNumber)
+        SyncInProgress(true, totalMessages)
+
+        local receivedChunks = {}
+        local sendFrame = CreateFrame("Frame")
+        local eventFrame = CreateFrame("Frame")
+        eventFrame:RegisterEvent("CHAT_MSG_CHANNEL")
+
+        local state = "IDLE"
+        local currentIndex = 0
+        local sendTimeout = 2
+        local lockoutDuration = 10
+        local lockedOutUntil = 0
+        local waitingForVerification = false
+        local verificationElapsed = 0
+        local verificationWaitTime = 1
+        local currentStartTime = 0
+
+        eventFrame:SetScript("OnEvent", function()
+            if event == "CHAT_MSG_CHANNEL" then
+                local msg = arg1
+                local iStart, iEnd, msgIndex, chunk = string.find(msg, "^CM_(%d+):(.+)$")
+                if msgIndex and chunk then
+                    msgIndex = tonumber(msgIndex)
+                    receivedChunks[msgIndex] = chunk
+                    if state == "WAITING" and msgIndex == currentIndex + 1 then
+                        table.remove(queue, 1)
+                        currentIndex = currentIndex + 1
+                        state = "IDLE"
+                    end
+                end
+            end
+        end)
+
+        local function verifyData()
+            for i=1, totalMessages do
+                if not receivedChunks[i] then
+                    DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") .. ":|r Data validation |cffff0000failed|r|cffffffff!|r")
+                    return
+                end
+            end
+            local reconstructed = table.concat(receivedChunks, "")
+            if reconstructed == data then
+                DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") .. ":|r Data validation |cff00ff00succeeded|r|cffffffff!|r")
+            else
+                DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") .. ":|r Data validation |cffff0000failed|r|cffffffff!|r")
+            end
+        end
+
+        sendFrame:SetScript("OnUpdate", function()
+            local now = GetTime()
+
+            if waitingForVerification then
+                verificationElapsed = verificationElapsed + arg1
+                if verificationElapsed >= verificationWaitTime then
+                    DEFAULT_CHAT_FRAME:AddMessage("|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") .. ":|r Data pushing |cff00ff00finished|r|cffffffff!|r")
+                    verifyData()
+                    SendChatMessage("CM_SYNC_STOPPED", "CHANNEL", nil, channelNumber)
+                    SyncInProgress(false, 0)
+                    eventFrame:UnregisterEvent("CHAT_MSG_CHANNEL")
+                    sendFrame:SetScript("OnUpdate", nil)
+                    sendFrame:Hide()
+                end
+                return
+            end
+
+            if table.getn(queue) == 0 then
+                waitingForVerification = true
+                verificationElapsed = 0
+                return
+            end
+
+            if state == "LOCKED" then
+                if now >= lockedOutUntil then
+                    state = "IDLE"
+                else
+                    return
+                end
+            end
+
+            if state == "IDLE" then
+                local nextMsg = queue[1]
+                if nextMsg then
+                    SendChatMessage("CM_" .. (currentIndex + 1) .. ":" .. nextMsg, "CHANNEL", nil, channelNumber)
+                    currentStartTime = now
+                    state = "WAITING"
+                end
+            elseif state == "WAITING" then
+                if now - currentStartTime > sendTimeout then
+                    state = "LOCKED"
+                    lockedOutUntil = now + lockoutDuration
+                end
+            end
+        end)
+
+        sendFrame:Show()
+    end
+
+-- READ DATA
+
+
+    local collecting = false
+    local collectedChunks = {}
+    local collectingFrom = ""
+    local collectingCount = 0
+    local dataComplete = false
+    local eventFrame = nil
+    local channelName = ""
+
+    local function ResetCollection()
+        collecting = false
+        collectingFrom = ""
+        collectedChunks = {}
+        collectingCount = 0
+        dataComplete = false
+    end
+
+    -- Adjusted to accept 'sender' as a parameter
+    local function StopCollecting(sender)
+        collecting = false
+
+        if sendDataButton then
+            sendDataButton:Enable()
+            sendDataButton.icon:SetDesaturated(false)
+        end
+
+        local total = table.getn(collectedChunks)
+        if total > 0 then
+            local i = 1
+            local finalString = ""
+            while i <= total do
+                if collectedChunks[i] then
+                    finalString = finalString .. collectedChunks[i]
+                end
+                i = i + 1
+            end
+            DEFAULT_CHAT_FRAME:AddMessage(
+                "|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") .. ":|r |cffffffffData |cff00ff00successfully|r retrieved from|r |cff00ccff" 
+                .. sender .. "|r|cffffffff (" 
+                .. total .. " chunks & " .. string.len(finalString) .. " data length)|r"
+            )
+            combineVariableTables(finalString)
+        else
+            DEFAULT_CHAT_FRAME:AddMessage(
+                "|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") .. ":|r |cffffffffData transmission |cffff0000failed|r from|r |cff00ccff" 
+                .. sender .. "|r"
+            )
+        end
+    end
+
+    local function StartCollecting(sender)
+        collecting = true
+        collectingFrom = sender
+        collectedChunks = {}
+        collectingCount = 0
+        dataComplete = false
+
+        if sendDataButton then
+            sendDataButton:Disable()
+            sendDataButton.icon:SetDesaturated(true)
+        end
+
+        DEFAULT_CHAT_FRAME:AddMessage(
+            "|cffffffff" .. GetAddOnMetadata("ConsumesManager", "Title") 
+            .. ":|r |cffffffffReceiving data from|r |cff00ccff" 
+            .. sender .. "|r|cffffffff...|r"
+        )
+    end
+
+    local function OnChatMessage()
+        if event == "CHAT_MSG_CHANNEL" then
+            local msg = arg1
+            local sender = arg2
+            local chName = arg9
+
+            if chName == channelName and channelName ~= "" then
+                if msg == "CM_SYNC_STARTED" then
+                    if sender ~= UnitName("player") and not collecting then
+                        StartCollecting(sender)
+                    end
+                elseif msg == "CM_SYNC_STOPPED" then
+                    if collecting and sender == collectingFrom then
+                        StopCollecting(sender)   -- Pass 'sender' here
+                        ResetCollection()
+                    end
+                else
+                    if collecting and sender == collectingFrom then
+                        local iStart, iEnd, msgIndex, chunk = string.find(msg, "^CM_(%d+):(.+)$")
+                        if msgIndex and chunk then
+                            msgIndex = tonumber(msgIndex)
+                            collectedChunks[msgIndex] = chunk
+                            collectingCount = collectingCount + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    function ReadData(mode)
+        if not ConsumesManager_Options.Channel or ConsumesManager_Options.Channel == "" then
+            return
+        end
+
+        channelName = DecodeMessage(ConsumesManager_Options.Channel)
+        local channelNumber = GetChannelName(channelName)
+
+        if not channelNumber or channelNumber == 0 then
+            return
+        end
+
+        if mode == "start" then
+            if not eventFrame then
+                eventFrame = CreateFrame("Frame")
+                eventFrame:SetScript("OnEvent", OnChatMessage)
+            end
+            eventFrame:RegisterEvent("CHAT_MSG_CHANNEL")
+        elseif mode == "stop" then
+            if eventFrame then
+                eventFrame:UnregisterEvent("CHAT_MSG_CHANNEL")
+                if collecting then
+                    StopCollecting(collectingFrom)  -- Pass 'collectingFrom'
+                    ResetCollection()
+                end
+            end
+        end
+    end
+
+    -- Register for PLAYER_LOGIN (or VARIABLES_LOADED in 1.12) to start listening automatically
+    local startupFrame = CreateFrame("Frame")
+    startupFrame:RegisterEvent("PLAYER_LOGIN")
+    startupFrame:SetScript("OnEvent", function()
+        if event == "PLAYER_LOGIN" then
+            ReadData("start")
+        end
+    end)
+
+
+    function combineVariableTables(compressed_message)
+
+        local receivedTable = {}
+        local realmName = GetRealmName()
+        local faction = UnitFactionGroup("player")
+
+        local decoded = DecodeMessage(compressed_message)
+        local uncompressed = lzw:decompress(decoded)
+        receivedTable = Converter:StringToTable(uncompressed)
+
+        local existingTable = ConsumesManager_Data[realmName][faction]
+
+
+        local function mergeTables(original, newData)
+            for key, value in newData do
+                if type(value) == "table" and type(original[key]) == "table" then
+                    mergeTables(original[key], value)
+                else
+                    original[key] = value
+                end
+            end
+        end
+
+        mergeTables(existingTable, receivedTable)
+        ConsumesManager_UpdateAllContent()
+
+    end
+
+-- BASE64 ENCODE AND DECODE --------------------------------------------------------------------------------------------------
+
+    local b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    local d = {}
+    do
+        local i = 1
+        while i <= string.len(b) do
+            local c = string.sub(b, i, i)
+            d[c] = i - 1
+            i = i + 1
+        end
+    end
+
+    function EncodeMessage(data)
+        local encoded = {}
+        local length = string.len(data)
+        local i = 1
+        while i <= length do
+            local c1 = string.byte(data, i, i) i = i + 1
+            local c2 = (i <= length) and string.byte(data, i, i) or nil i = i + 1
+            local c3 = (i <= length) and string.byte(data, i, i) or nil i = i + 1
+
+            local o1 = bit.rshift(c1, 2)
+            local o2 = bit.bor(bit.lshift(bit.band(c1, 3),4), (c2 and bit.rshift(c2, 4) or 0))
+            local o3 = (c2 and bit.bor(bit.lshift(bit.band(c2,15),2), (c3 and bit.rshift(c3,6) or 0)) or 64)
+            local o4 = (c3 and bit.band(c3,63) or 64)
+
+            table.insert(encoded, string.sub(b, o1+1, o1+1))
+            table.insert(encoded, string.sub(b, o2+1, o2+1))
+            if o3 ~= 64 then
+                table.insert(encoded, string.sub(b, o3+1, o3+1))
+            else
+                table.insert(encoded, "=")
+            end
+            if o4 ~= 64 then
+                table.insert(encoded, string.sub(b, o4+1, o4+1))
+            else
+                table.insert(encoded, "=")
+            end
+        end
+        return table.concat(encoded, "")
+    end
+
+    function DecodeMessage(str)
+        local decoded = {}
+        local length = string.len(str)
+        local i = 1
+        while i <= length do
+            local c1 = string.sub(str, i, i) i = i + 1
+            local c2 = string.sub(str, i, i) i = i + 1
+            if (not c2) or (c1 == '=') or (c2 == '=') then
+                break
+            end
+            local c3 = string.sub(str, i, i) i = i + 1
+            local c4 = string.sub(str, i, i) i = i + 1
+
+            local dc1 = d[c1]
+            local dc2 = d[c2]
+            local dc3 = (c3 and c3 ~= '=' and d[c3]) or nil
+            local dc4 = (c4 and c4 ~= '=' and d[c4]) or nil
+
+            local o1 = bit.bor(bit.lshift(dc1, 2), bit.rshift(dc2, 4))
+            table.insert(decoded, string.char(o1))
+
+            if dc3 then
+                local o2 = bit.bor(bit.lshift(bit.band(dc2, 15),4), bit.rshift(dc3, 2))
+                table.insert(decoded, string.char(o2))
+                if dc4 then
+                    local o3 = bit.bor(bit.lshift(bit.band(dc3, 3),6), dc4)
+                    table.insert(decoded, string.char(o3))
+                end
+            end
+        end
+        return table.concat(decoded, "")
+    end
+
