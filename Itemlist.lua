@@ -91,12 +91,12 @@ consumablesCategories = {
         { id = 60978, name = "Danonzo's Tel'Abim Medley", mats = {"1x Gargantuan Tel'Abim Banana", "1x Soothing Spices", "2x Golden Sansam"}, texture = "Interface\\Icons\\INV_Misc_Food_07", description = "Increase haste by 2% for 15 minutes." },
         { id = 60976, name = "Danonzo's Tel'Abim Surprise", mats = {"1x Gargantuan Tel'Abim Banana", "1x Soothing Spices", "1x Heart of the Wild"}, texture = "Interface\\Icons\\INV_Misc_Food_09", description = "Gain 45 Ranged Attack Power for 15 minutes." },
         { id = 84041, name = "Gilneas Hot Stew", mats = {"1x Red Wolf Meat", "1x White Spider Meat", "1x Refreshing Spring Water"}, texture = "Interface\\Icons\\inv_drink_19", description = "Gain 12 spell damage for 15 minutes." },
-        { id = 21217, name = "Sagefish Delight", mats = {"1x Raw Greater Sagefish", "1x Hot Spices"}, texture = "Interface\\Icons\\inv_misc_fish_21", description = "Gain 6 mana every 5 seconds for 15 minutes." }
-        { id = 18045, name = "Tender Wolf Steak", mats = {"1x Tender Wolf Meat", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_food_47", description = "Gain 12 stamina and spirit for 15 minutes." }
-        { id = 13935, name = "Baked Salmon", mats = {"1x Raw Whitescale Salmon", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_fish_20", description = "Gain 14 stamina and spirit for 15 minutes." }
+        { id = 21217, name = "Sagefish Delight", mats = {"1x Raw Greater Sagefish", "1x Hot Spices"}, texture = "Interface\\Icons\\inv_misc_fish_21", description = "Gain 6 mana every 5 seconds for 15 minutes." },
+        { id = 18045, name = "Tender Wolf Steak", mats = {"1x Tender Wolf Meat", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_food_47", description = "Gain 12 stamina and spirit for 15 minutes." },
+        { id = 13935, name = "Baked Salmon", mats = {"1x Raw Whitescale Salmon", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_fish_20", description = "Gain 14 stamina and spirit for 15 minutes." },
         { id = 13933, name = "Lobster Stew", mats = {"1x Darkclaw Lobster", "1x Refreshing Spring Water"}, texture = "Interface\\Icons\\inv_drink_17", description = "Gain 14 stamina and spirit for 15 minutes." }
     },
-        ["Alcohol"] = {
+    ["Alcohol"] = {
         { id = 18269, name = "Gordok Green Grog", mats = {"Bought from Stomper Kreeg after a Dire Maul Tribute run"}, texture = "Interface\\Icons\\INV_Drink_03", description = "Increases Stamina by 10 for 15 minutes." },
         { id = 18284, name = "Kreeg's Stout Beatdown", mats = {"Bought from Stomper Kreeg after a Dire Maul Tribute run"}, texture = "Interface\\Icons\\INV_Drink_05", description = "Increases Spirit by 25, but decreases Intelligence by 5 for 15 minutes." },
         { id = 61174, name = "Medivh's Merlot", mats = {"Looted from wine barrels in Lower Karazhan Halls."}, texture = "Interface\\Icons\\INV_Drink_Waterskin_05", description = "Increases Stamina by 25 for 15 minutes." },
