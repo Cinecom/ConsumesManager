@@ -73,7 +73,6 @@ consumablesCategories = {
         { id = 20004, name = "Major Troll's Blood Potion", mats = {"1x Gromsblood", "2x Plaguebloom", "1x Crystal Vial"}, texture = "Interface\\Icons\\inv_potion_80", description = "Regenerate 20 health every 5 sec for 1 hour." },
         { id = 14530, name = "Heavy Runecloth Bandage", mats = {"2x Runecloth"}, texture = "Interface\\Icons\\inv_misc_bandage_12", description = "Heals 2000 damage over 8 sec." },
         { id = 13180, name = "Stratholme Holy Water", mats = {"Looted from Crates in Stratholme"}, texture = "Interface\\Icons\\inv_potion_75", description = "Inflicts between 438 and 562 damage to Undead in a 10 yard radius." }
-
     },
     ["Food Buffs"] = {
         { id = 21023, name = "Dirge's Kickin' Chimaerok Chops", mats = {"1x Hot Spices", "1x Goblin Rocket Fuel", "1x Deeprock Salt", "1x Chimaerok Tenderloin"}, texture = "Interface\\Icons\\INV_Misc_Food_65", description = "Increases Strength by 25 for 1 hour." },
@@ -91,6 +90,9 @@ consumablesCategories = {
         { id = 60976, name = "Danonzo's Tel'Abim Surprise", mats = {"1x Gargantuan Tel'Abim Banana", "1x Soothing Spices", "1x Heart of the Wild"}, texture = "Interface\\Icons\\INV_Misc_Food_09", description = "Gain 45 Ranged Attack Power for 15 minutes." },
         { id = 84041, name = "Gilneas Hot Stew", mats = {"1x Red Wolf Meat", "1x White Spider Meat", "1x Refreshing Spring Water"}, texture = "Interface\\Icons\\inv_drink_19", description = "Gain 12 spell damage for 15 minutes." },
         { id = 21217, name = "Sagefish Delight", mats = {"1x Raw Greater Sagefish", "1x Hot Spices"}, texture = "Interface\\Icons\\inv_misc_fish_21", description = "Gain 6 mana every 5 seconds for 15 minutes." }
+        { id = 18045, name = "Tender Wolf Steak", mats = {"1x Tender Wolf Meat", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_food_47", description = "Gain 12 stamina and spirit for 15 minutes." }
+        { id = 13935, name = "Baked Salmon", mats = {"1x Raw Whitescale Salmon", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_fish_20", description = "Gain 14 stamina and spirit for 15 minutes." }
+        { id = 13933, name = "Lobster Stew", mats = {"1x Darkclaw Lobster", "1x Refreshing Spring Water"}, texture = "Interface\\Icons\\inv_drink_17", description = "Gain 14 stamina and spirit for 15 minutes." }
     },
     ["Special Buffs"] = {
         { id = 12451, name = "Juju Power", mats = {"Quest: 3x Winterfall E'ko (Kill Furbolgs)"}, texture = "Interface\\Icons\\INV_Misc_MonsterScales_11", description = "Increases Strength by 30 for 30 minutes." },

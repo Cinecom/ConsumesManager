@@ -5,11 +5,13 @@
         self:RegisterForDrag("LeftButton")
         self:SetScript("OnDragStart", function() ConsumesManager_OnDragStart(self) end)
         self:SetScript("OnDragStop", function() ConsumesManager_OnDragStop(self) end)
+         self:SetScript("OnClick", ConsumesManager_HandleClick)
     end
 
     function ConsumesManager_HandleClick(self, button)
-        if not self then return end
+        -- Only respond to left-clicks without the Shift key pressed
         if button == "LeftButton" and not IsShiftKeyDown() then
+            -- Toggle the visibility of the main frame
             if ConsumesManager_MainFrame and ConsumesManager_MainFrame:IsShown() then
                 ConsumesManager_MainFrame:Hide()
             else
@@ -392,8 +394,10 @@ function ConsumesManager_ShowMainWindow()
         ConsumesManager_CreateMainWindow()
     end
     ConsumesManager_MainFrame:Show()
+    
     -- Scan inventory when the window is opened
     ConsumesManager_ScanPlayerInventory()
+    
     -- Only scan bank and mail if they are open
     if BankFrame and BankFrame:IsShown() then
         ConsumesManager_ScanPlayerBank()
@@ -401,15 +405,22 @@ function ConsumesManager_ShowMainWindow()
     if MailFrame and MailFrame:IsShown() then
         ConsumesManager_ScanPlayerMail()
     end
+    
     -- Update the tabs based on whether bank and mail have been scanned
     ConsumesManager_UpdateTabStates()
+    
     -- Update the Manager content
     ConsumesManager_UpdateManagerContent()
+    
     -- Update the Presets content
     ConsumesManager_UpdatePresetsConsumables()
+    
+    -- Update Settings content
     ConsumesManager_UpdateSettingsContent()
-    ConsumesManager_UpdateManagerContent()
+    
+    -- Removed duplicate call to ConsumesManager_UpdateManagerContent()
 end
+
 
 
 function ConsumesManager_ShowTab(tabIndex)
@@ -3483,7 +3494,14 @@ function ConsumesManager_ScanPlayerInventory()
 end
 
 function ConsumesManager_ScanPlayerBank()
-    if not BankFrame or not BankFrame:IsShown() then
+    local isBankOpen = false
+    if BankFrame and BankFrame:IsShown() then
+        isBankOpen = true
+    elseif _G["BBankFrame"] and _G["BBankFrame"]:IsShown() then
+        isBankOpen = true
+    end
+
+    if not isBankOpen then
         return
     end
 
