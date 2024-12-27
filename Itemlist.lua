@@ -84,6 +84,8 @@ consumablesCategories = {
         { id = 51717, name = "Hardened Mushroom", mats = {"Gardening: Magic Mushroom Spores"}, texture = "Interface\\Icons\\INV_Mushroom_11", description = "Increases 25 Stamina for 15 minutes." },
         { id = 51720, name = "Power Mushroom", mats = {"Gardening: Magic Mushroom Spores"}, texture = "Interface\\Icons\\INV_Mushroom_11", description = "Increases 20 Strength for 15 minutes." },
         { id = 21151, name = "Rumsey Rum Black Label", mats = {"Diverse Attainable"}, texture = "Interface\\Icons\\INV_Drink_04", description = "Increases Stamina by 15 for 15 minutes." },
+        { id = 12218, name = "Baked Salmon", mats = {"1x Raw Whitescale Salmon", "1x Soothing Spices"}, texture = "Interface\\Icons\\INV_Misc_Fish_20", description = "Increases 14 Stamina and 14 Spirit for 15 minutes." },
+        { id = 13933, name = "Lobster Stew", mats = {"1x Darkclaw Lobster", "1x Refreshing Springwater"}, texture = "Interface\\Icons\\INV_Drink_17", description = "Increases 14 Stamina and 14 Spirit for 15 minutes." },
         { id = 12218, name = "Monster Omelet", mats = {"1x Giant Egg", "2x Soothing Spices"}, texture = "Interface\\Icons\\INV_Misc_Food_06", description = "Increases 12 Stamina and 12 Spirit for 15 minutes." },
         { id = 60977, name = "Danonzo's Tel'Abim Delight", mats = {"1x Gargantuan Tel'Abim Banana", "1x Soothing Spices", "1x Icecap"}, texture = "Interface\\Icons\\INV_Misc_Food_06", description = "Gain 22 spell damage for 15 minutes." },
         { id = 60978, name = "Danonzo's Tel'Abim Medley", mats = {"1x Gargantuan Tel'Abim Banana", "1x Soothing Spices", "2x Golden Sansam"}, texture = "Interface\\Icons\\INV_Misc_Food_07", description = "Increase haste by 2% for 15 minutes." },
@@ -93,6 +95,12 @@ consumablesCategories = {
         { id = 18045, name = "Tender Wolf Steak", mats = {"1x Tender Wolf Meat", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_food_47", description = "Gain 12 stamina and spirit for 15 minutes." }
         { id = 13935, name = "Baked Salmon", mats = {"1x Raw Whitescale Salmon", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_fish_20", description = "Gain 14 stamina and spirit for 15 minutes." }
         { id = 13933, name = "Lobster Stew", mats = {"1x Darkclaw Lobster", "1x Refreshing Spring Water"}, texture = "Interface\\Icons\\inv_drink_17", description = "Gain 14 stamina and spirit for 15 minutes." }
+    },
+        ["Alcohol"] = {
+        { id = 18269, name = "Gordok Green Grog", mats = {"Bought from Stomper Kreeg after a Dire Maul Tribute run"}, texture = "Interface\\Icons\\INV_Drink_03", description = "Increases Stamina by 10 for 15 minutes." },
+        { id = 18284, name = "Kreeg's Stout Beatdown", mats = {"Bought from Stomper Kreeg after a Dire Maul Tribute run"}, texture = "Interface\\Icons\\INV_Drink_05", description = "Increases Spirit by 25, but decreases Intelligence by 5 for 15 minutes." },
+        { id = 61174, name = "Medivh's Merlot", mats = {"Looted from wine barrels in Lower Karazhan Halls."}, texture = "Interface\\Icons\\INV_Drink_Waterskin_05", description = "Increases Stamina by 25 for 15 minutes." },
+        { id = 61175, name = "Medivh's Merlot Blue", mats = {"Looted from wine barrels in Lower Karazhan Halls."}, texture = "Interface\\Icons\\INV_Drink_Waterskin_01", description = "Increases Intelligence by 15 for 15 minutes." }
     },
     ["Special Buffs"] = {
         { id = 12451, name = "Juju Power", mats = {"Quest: 3x Winterfall E'ko (Kill Furbolgs)"}, texture = "Interface\\Icons\\INV_Misc_MonsterScales_11", description = "Increases Strength by 30 for 30 minutes." },
