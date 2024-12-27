@@ -13,6 +13,12 @@ Unzip the file and place the 'ConsumesManager' folder in your /Interface/AddOns 
 Click the mini-map icon to open/close the Tracker. For a detailled overview watch the tutorial video on top.
 
 ## Changelog
+**2.0.1**
+```
+- Fixed a compatibility issue with Onebag
+- Added some food buffs to the item list
+```
+
 **2.0**
 ```
 - Added a new feature which allows syncing between multiple accounts (in beta)
