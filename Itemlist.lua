@@ -72,7 +72,9 @@ consumablesCategories = {
         { id = 7676, name = "Thistle Tea", mats = {"1x Swiftthistle", "1x Refreshing Spring Water"}, texture = "Interface\\Icons\\INV_Drink_Milk_05", description = "Instantly restores 100 energy." },
         { id = 20004, name = "Major Troll's Blood Potion", mats = {"1x Gromsblood", "2x Plaguebloom", "1x Crystal Vial"}, texture = "Interface\\Icons\\inv_potion_80", description = "Regenerate 20 health every 5 sec for 1 hour." },
         { id = 14530, name = "Heavy Runecloth Bandage", mats = {"2x Runecloth"}, texture = "Interface\\Icons\\inv_misc_bandage_12", description = "Heals 2000 damage over 8 sec." },
-        { id = 13180, name = "Stratholme Holy Water", mats = {"Looted from Crates in Stratholme"}, texture = "Interface\\Icons\\inv_potion_75", description = "Inflicts between 438 and 562 damage to Undead in a 10 yard radius." }
+        { id = 13180, name = "Stratholme Holy Water", mats = {"Looted from Crates in Stratholme"}, texture = "Interface\\Icons\\inv_potion_75", description = "Inflicts between 438 and 562 damage to Undead in a 10 yard radius." },
+        { id = 20520, name = "Dark Rune", mats = {"Looted from NPC's in Stratholme"}, texture = "Interface\\Icons\\spell_shadow_sealofkings", description = "Restores 900 to 1501 mana at the cost of 600 to 1001 life." },
+        { id = 12662, name = "Demonic Rune", mats = {"Looted from various world NPC's"}, texture = "Interface\\Icons\\inv_misc_rune_04", description = "Restores 900 to 1501 mana at the cost of 600 to 1001 life." }
     },
     ["Food Buffs"] = {
         { id = 21023, name = "Dirge's Kickin' Chimaerok Chops", mats = {"1x Hot Spices", "1x Goblin Rocket Fuel", "1x Deeprock Salt", "1x Chimaerok Tenderloin"}, texture = "Interface\\Icons\\INV_Misc_Food_65", description = "Increases Strength by 25 for 1 hour." },
