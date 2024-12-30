@@ -13,6 +13,14 @@ Unzip the file and place the 'ConsumesManager' folder in your /Interface/AddOns 
 Click the mini-map icon to open/close the Tracker. For a detailled overview watch the tutorial video on top.
 
 ## Changelog
+**2.0.2**
+```
+- Fixed a compatibility issue with other addons where the bank would not scan
+- Added a delay to the scanning functions to avoid performance issues or client crashes
+- Fixed a UI bug in the syncing progress bar
+- Added compatibility with SuperWoW for consumables that have charges
+```
+
 **2.0.1**
 ```
 - Fixed a compatibility issue with Onebag
