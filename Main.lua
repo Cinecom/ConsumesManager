@@ -57,6 +57,17 @@
     ConsumesManager_EventFrame:RegisterEvent("MAIL_CLOSED")
 
     ConsumesManager_EventFrame:SetScript("OnEvent", function()
+
+        if event == "BANKFRAME_OPENED" then
+            isBankOpen = true
+        elseif event == "BANKFRAME_CLOSED" then
+            isBankOpen = false
+        elseif event == "MAIL_SHOW" then
+            isMailOpen = true
+        elseif event == "MAIL_CLOSED" then
+            isMailOpen = false
+        end
+
         if event == "PLAYER_LOGIN" then
             if ConsumesManager_Options and ConsumesManager_Options.Channel and ConsumesManager_Options.Password then
                 local channelName = DecodeMessage(ConsumesManager_Options.Channel)
@@ -88,10 +99,10 @@
             ConsumesManager_ScanPlayerMail()
         elseif event == "BAG_UPDATE" then
             ConsumesManager_ScanPlayerInventory()
-            if BankFrame and BankFrame:IsShown() then
+            if isBankOpen == true then
                 ConsumesManager_ScanPlayerBank()
             end
-            if MailFrame and MailFrame:IsShown() then
+            if isMailOpen == true then
                 ConsumesManager_ScanPlayerMail()
             end
         elseif event == "BANKFRAME_OPENED" then
@@ -100,11 +111,11 @@
             ConsumesManager_ScanPlayerBank()
             ConsumesManager_ScanPlayerInventory()
         elseif event == "ITEM_LOCK_CHANGED" then
-            if BankFrame and BankFrame:IsShown() then
+            if isBankOpen == true then
                 ConsumesManager_ScanPlayerInventory()
                 ConsumesManager_ScanPlayerBank()
             end
-            if MailFrame and MailFrame:IsShown() then
+            if isMailOpen == true then
                 ConsumesManager_ScanPlayerInventory()
                 ConsumesManager_ScanPlayerMail()
             end
@@ -399,10 +410,10 @@ function ConsumesManager_ShowMainWindow()
     ConsumesManager_ScanPlayerInventory()
     
     -- Only scan bank and mail if they are open
-    if BankFrame and BankFrame:IsShown() then
+    if event == "BANKFRAME_OPENED" then
         ConsumesManager_ScanPlayerBank()
     end
-    if MailFrame and MailFrame:IsShown() then
+    if event == "MAIL_SHOW" or event == "MAIL_INBOX_UPDATE" then
         ConsumesManager_ScanPlayerMail()
     end
     
@@ -418,7 +429,6 @@ function ConsumesManager_ShowMainWindow()
     -- Update Settings content
     ConsumesManager_UpdateSettingsContent()
     
-    -- Removed duplicate call to ConsumesManager_UpdateManagerContent()
 end
 
 
@@ -2861,7 +2871,6 @@ function ConsumesManager_UpdateSettingsContent()
     end
 end
 
-
 function ConsumesManager_UpdateSettingsScrollBar()
     local OptionsFrame = ConsumesManager_MainFrame and ConsumesManager_MainFrame.tabs and ConsumesManager_MainFrame.tabs[4]
     if not OptionsFrame then
@@ -3457,122 +3466,146 @@ end
 
 -- Scan Functions ---------------------------------------------------------------------------------------
 function ConsumesManager_ScanPlayerInventory()
-    local playerName = UnitName("player")
-    local realmName = GetRealmName()
-    local faction = UnitFactionGroup("player")
+    local delayFrameInv = CreateFrame("Frame")
+    local delayStartTime = GetTime()
+    local delay = 0.5
 
-    ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
-    ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
-    ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
-    local data = ConsumesManager_Data[realmName][faction][playerName]
-    data["inventory"] = {}
+    delayFrameInv:SetScript("OnUpdate", function()
+        if GetTime() - delayStartTime >= delay then
+            local playerName = UnitName("player")
+            local realmName = GetRealmName()
+            local faction = UnitFactionGroup("player")
 
-    for bag = 0, 4 do
-        local numSlots = GetContainerNumSlots(bag)
-        if numSlots then
-            for slot = 1, numSlots do
-                local link = GetContainerItemLink(bag, slot)
-                if link then
-                    local _, _, itemID = string.find(link, "item:(%d+)")
-                    if itemID then
-                        itemID = tonumber(itemID)
-                        if consumablesList[itemID] then
-                            local _, itemCount = GetContainerItemInfo(bag, slot)
-                            if itemCount and itemCount > 0 then
-                                data["inventory"][itemID] = (data["inventory"][itemID] or 0) + itemCount
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
+            ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
+            ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
+            ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
+            local data = ConsumesManager_Data[realmName][faction][playerName]
+            data["inventory"] = {}
 
-    ConsumesManager_UpdateUseButtons()
-    ConsumesManager_UpdateManagerContent()
-    ConsumesManager_UpdateTabStates()
-end
-
-function ConsumesManager_ScanPlayerBank()
-    local isBankOpen = false
-    if BankFrame and BankFrame:IsShown() then
-        isBankOpen = true
-    elseif _G["BBankFrame"] and _G["BBankFrame"]:IsShown() then
-        isBankOpen = true
-    end
-
-    if not isBankOpen then
-        return
-    end
-
-    local playerName = UnitName("player")
-    local realmName = GetRealmName()
-    local faction = UnitFactionGroup("player")
-
-    ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
-    ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
-    ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
-    local data = ConsumesManager_Data[realmName][faction][playerName]
-    data["bank"] = {}
-
-    for bag = -1, 10 do
-        if bag == -1 or (bag >= 5 and bag <= 10) then
-            local numSlots = GetContainerNumSlots(bag)
-            if numSlots then
-                for slot = 1, numSlots do
-                    local link = GetContainerItemLink(bag, slot)
-                    if link then
-                        local _, _, itemID = string.find(link, "item:(%d+)")
-                        if itemID then
-                            itemID = tonumber(itemID)
-                            if consumablesList[itemID] then
-                                local _, itemCount = GetContainerItemInfo(bag, slot)
-                                if itemCount and itemCount > 0 then
-                                    data["bank"][itemID] = (data["bank"][itemID] or 0) + itemCount
+            for bag = 0, 4 do
+                local numSlots = GetContainerNumSlots(bag)
+                if numSlots then
+                    for slot = 1, numSlots do
+                        local link = GetContainerItemLink(bag, slot)
+                        if link then
+                            local _, _, itemID = string.find(link, "item:(%d+)")
+                            if itemID then
+                                itemID = tonumber(itemID)
+                                if consumablesList[itemID] then
+                                    local _, itemCount = GetContainerItemInfo(bag, slot)
+                                    if itemCount and itemCount ~= 0 then
+                                        if itemCount < 0 then itemCount = -itemCount end
+                                        data["inventory"][itemID] = (data["inventory"][itemID] or 0) + itemCount
+                                    end
                                 end
                             end
                         end
                     end
                 end
             end
-        end
-    end
 
-    ConsumesManager_UpdateManagerContent()
-    ConsumesManager_UpdateTabStates()
+            ConsumesManager_UpdateUseButtons()
+            ConsumesManager_UpdateManagerContent()
+            ConsumesManager_UpdateTabStates()
+            delayFrameInv:SetScript("OnUpdate", nil)
+        end
+    end)
+end
+
+function ConsumesManager_ScanPlayerBank()
+
+    if not isBankOpen then return end
+
+    local delayFrameBank = CreateFrame("Frame")
+    local delayStartTime = GetTime()
+    local delay = 0.5
+
+    delayFrameBank:SetScript("OnUpdate", function()
+        if GetTime() - delayStartTime >= delay then
+            local playerName = UnitName("player")
+            local realmName = GetRealmName()
+            local faction = UnitFactionGroup("player")
+
+            ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
+            ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
+            ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
+            local data = ConsumesManager_Data[realmName][faction][playerName]
+            data["bank"] = {}
+
+
+            for bag = -1, 10 do
+                if bag == -1 or (bag >= 5 and bag <= 10) then
+                    local numSlots = GetContainerNumSlots(bag)
+                    if numSlots then
+                        for slot = 1, numSlots do
+                            local link = GetContainerItemLink(bag, slot)
+                            if link then
+                                local _, _, itemID = string.find(link, "item:(%d+)")
+                                if itemID then
+                                    itemID = tonumber(itemID)
+                                    if consumablesList[itemID] then
+                                        local _, itemCount = GetContainerItemInfo(bag, slot)
+                                        if itemCount and itemCount ~= 0 then
+                                            if itemCount < 0 then itemCount = -itemCount end
+                                            data["bank"][itemID] = (data["bank"][itemID] or 0) + itemCount
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            ConsumesManager_UpdateManagerContent()
+            ConsumesManager_UpdateTabStates()
+            delayFrameBank:SetScript("OnUpdate", nil)
+        end
+    end)
+    
 end
 
 function ConsumesManager_ScanPlayerMail()
-    if not MailFrame or not MailFrame:IsShown() then
-        return
-    end
 
-    local playerName = UnitName("player")
-    local realmName = GetRealmName()
-    local faction = UnitFactionGroup("player")
+    if not isMailOpen then return end
 
-    ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
-    ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
-    ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
-    local data = ConsumesManager_Data[realmName][faction][playerName]
-    data["mail"] = {}
+    local delayFrameMail = CreateFrame("Frame")
+    local delayStartTime = GetTime()
+    local delay = 0.5
 
-    local numInboxItems = GetInboxNumItems()
-    if numInboxItems and numInboxItems > 0 then
-        for mailIndex = 1, numInboxItems do
-            local itemName, _, itemCount = GetInboxItem(mailIndex)
-            if itemName and itemCount and itemCount > 0 then
-                local itemID = consumablesNameToID[itemName]
-                if itemID and consumablesList[itemID] then
-                    data["mail"][itemID] = (data["mail"][itemID] or 0) + itemCount
+    delayFrameMail:SetScript("OnUpdate", function()
+        if GetTime() - delayStartTime >= delay then
+            local playerName = UnitName("player")
+            local realmName = GetRealmName()
+            local faction = UnitFactionGroup("player")
+
+            ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
+            ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
+            ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
+            local data = ConsumesManager_Data[realmName][faction][playerName]
+            data["mail"] = {}
+
+            local numInboxItems = GetInboxNumItems()
+            if numInboxItems and numInboxItems > 0 then
+                for mailIndex = 1, numInboxItems do
+                    local itemName, _, itemCount = GetInboxItem(mailIndex)
+                    if itemName and itemCount and itemCount > 0 then
+                        local itemID = consumablesNameToID[itemName]
+                        if itemID and consumablesList[itemID] then
+                            data["mail"][itemID] = (data["mail"][itemID] or 0) + itemCount
+                        end
+                    end
                 end
             end
-        end
-    end
 
-    ConsumesManager_UpdateManagerContent()
-    ConsumesManager_UpdateTabStates()
+            ConsumesManager_UpdateManagerContent()
+            ConsumesManager_UpdateTabStates()
+            delayFrameMail:SetScript("OnUpdate", nil)
+        end
+    end)
 end
+
+
 
 
 
@@ -3604,7 +3637,6 @@ end
             resetButton:SetAlpha(0.5)
 
             ProgressBarFrame:Show()
-            ProgressBarFrame_fill:Show()
             ProgressBarFrame_Text:Show()
 
             ProgressBar = totalTime
@@ -3650,6 +3682,7 @@ end
                         BarHeight = 492
                     end
                 end
+                ProgressBarFrame_fill:Show()
                 ProgressBarFrame_fill:SetHeight(BarHeight)
                 countdownTimer = 0
             end

@@ -38,7 +38,7 @@ classPresets = {
         { raid = "Emerald Sanctum", id = {13454, 61224} },
         { raid = "Molten Core", id = {13454, 61224} },
         { raid = "Blackwing Lair", id = {13454, 61224} },
-        { raid = "Temple of Ahn'Qiraj", id = {13454, 61224} },
+        { raid = "Temple of Ahn'Qiraj", id = {13454, 61224, 21546} },
         { raid = "Naxxramas", id = {13454, 21546, 20079, 20749, 60977, 13512, 61224} }
     },
     ["Frost Mage"] = {
