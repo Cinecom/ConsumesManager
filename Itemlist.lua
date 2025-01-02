@@ -85,7 +85,6 @@ consumablesCategories = {
         { id = 51714, name = "Sweet Mountain Berry (Stamina)", mats = {"Gardening: Mountain Berry Bush Seeds"}, texture = "Interface\\Icons\\INV_Misc_Food_40", description = "Increases Stamina by 10 for 1 hour." },
         { id = 51717, name = "Hardened Mushroom", mats = {"Gardening: Magic Mushroom Spores"}, texture = "Interface\\Icons\\INV_Mushroom_11", description = "Increases 25 Stamina for 15 minutes." },
         { id = 51720, name = "Power Mushroom", mats = {"Gardening: Magic Mushroom Spores"}, texture = "Interface\\Icons\\INV_Mushroom_11", description = "Increases 20 Strength for 15 minutes." },
-        { id = 21151, name = "Rumsey Rum Black Label", mats = {"Diverse Attainable"}, texture = "Interface\\Icons\\INV_Drink_04", description = "Increases Stamina by 15 for 15 minutes." },
         { id = 12218, name = "Baked Salmon", mats = {"1x Raw Whitescale Salmon", "1x Soothing Spices"}, texture = "Interface\\Icons\\INV_Misc_Fish_20", description = "Increases 14 Stamina and 14 Spirit for 15 minutes." },
         { id = 13933, name = "Lobster Stew", mats = {"1x Darkclaw Lobster", "1x Refreshing Springwater"}, texture = "Interface\\Icons\\INV_Drink_17", description = "Increases 14 Stamina and 14 Spirit for 15 minutes." },
         { id = 12218, name = "Monster Omelet", mats = {"1x Giant Egg", "2x Soothing Spices"}, texture = "Interface\\Icons\\INV_Misc_Food_06", description = "Increases 12 Stamina and 12 Spirit for 15 minutes." },
@@ -102,7 +101,8 @@ consumablesCategories = {
         { id = 18269, name = "Gordok Green Grog", mats = {"Bought from Stomper Kreeg after a Dire Maul Tribute run"}, texture = "Interface\\Icons\\INV_Drink_03", description = "Increases Stamina by 10 for 15 minutes." },
         { id = 18284, name = "Kreeg's Stout Beatdown", mats = {"Bought from Stomper Kreeg after a Dire Maul Tribute run"}, texture = "Interface\\Icons\\INV_Drink_05", description = "Increases Spirit by 25, but decreases Intelligence by 5 for 15 minutes." },
         { id = 61174, name = "Medivh's Merlot", mats = {"Looted from wine barrels in Lower Karazhan Halls."}, texture = "Interface\\Icons\\INV_Drink_Waterskin_05", description = "Increases Stamina by 25 for 15 minutes." },
-        { id = 61175, name = "Medivh's Merlot Blue", mats = {"Looted from wine barrels in Lower Karazhan Halls."}, texture = "Interface\\Icons\\INV_Drink_Waterskin_01", description = "Increases Intelligence by 15 for 15 minutes." }
+        { id = 61175, name = "Medivh's Merlot Blue", mats = {"Looted from wine barrels in Lower Karazhan Halls."}, texture = "Interface\\Icons\\INV_Drink_Waterskin_01", description = "Increases Intelligence by 15 for 15 minutes." },
+        { id = 21151, name = "Rumsey Rum Black Label", mats = {"Diverse Attainable"}, texture = "Interface\\Icons\\INV_Drink_04", description = "Increases Stamina by 15 for 15 minutes." }
     },
     ["Special Buffs"] = {
         { id = 12451, name = "Juju Power", mats = {"Quest: 3x Winterfall E'ko (Kill Furbolgs)"}, texture = "Interface\\Icons\\INV_Misc_MonsterScales_11", description = "Increases Strength by 30 for 30 minutes." },
