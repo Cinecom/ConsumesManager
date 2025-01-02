@@ -58,9 +58,12 @@
 
     ConsumesManager_EventFrame:SetScript("OnEvent", function()
 
+        local isDefaultBankVisible = BankFrame and BankFrame:IsVisible()
+        local isOneBankVisible = OneBankFrame and OneBankFrame:IsVisible()
+
         if event == "BANKFRAME_OPENED" then
             isBankOpen = true
-        elseif event == "BANKFRAME_CLOSED" then
+        elseif not (isDefaultBankVisible or isOneBankVisible) then
             isBankOpen = false
         elseif event == "MAIL_SHOW" then
             isMailOpen = true
@@ -428,10 +431,7 @@ function ConsumesManager_ShowMainWindow()
     
     -- Update Settings content
     ConsumesManager_UpdateSettingsContent()
-    
 end
-
-
 
 function ConsumesManager_ShowTab(tabIndex)
     if not ConsumesManager_MainFrame or not ConsumesManager_MainFrame.tabs then return end
@@ -2179,7 +2179,6 @@ end
 
 
 
-
 -- Settings Window -----------------------------------------------------------------------------------
 function ConsumesManager_CreateSettingsContent(parentFrame)
     -- Scroll Frame Setup
@@ -2900,8 +2899,6 @@ end
 
 
 
-
-
 -- Global Functions -----------------------------------------------------------------------------
 function ConsumesManager_UpdateUseButtons()
     if not ConsumesManager_MainFrame or not ConsumesManager_MainFrame.tabs or not ConsumesManager_MainFrame.tabs[1] then
@@ -3513,7 +3510,6 @@ function ConsumesManager_ScanPlayerInventory()
 end
 
 function ConsumesManager_ScanPlayerBank()
-
     if not isBankOpen then return end
 
     local delayFrameBank = CreateFrame("Frame")
