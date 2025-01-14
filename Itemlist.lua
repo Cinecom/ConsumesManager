@@ -64,6 +64,7 @@ consumablesCategories = {
         { id = 9030, name = "Restorative Potion", mats = {"1x Elemental Earth", "1x Goldthorn", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_01", description = "Removes a magic, curse, poison, or disease effect every 5 seconds for 30 seconds." },
         { id = 4390, name = "Iron Grenade", mats = {"1x Iron Bar", "1x Heavy Blasting Powder", "1x Silk Cloth"}, texture = "Interface\\Icons\\INV_Misc_Bomb_08", description = "Inflicts 132 to 219 Fire damage and stuns enemies in a 3-yard radius for 3 seconds." },
         { id = 15993, name = "Thorium Grenade", mats = {"1x Thorium Widget", "3x Thorium Bar", "3x Dense Blasting Powder", "3x Runecloth"}, texture = "Interface\\Icons\\INV_Misc_Bomb_08", description = "Inflicts 300 to 501 Fire damage and stuns enemies in a 3-yard radius for 3 seconds." },
+        { id = 18641, name = "Dense Dynamite", mats = {"2x Dense Blasting Powder", "3x Runecloth"}, texture = "Interface\\Icons\\INV_Misc_Bomb_06", description = "Inflicts 340 to 461 Fire damage in a 5 yard radius." },
         { id = 10646, name = "Goblin Sapper Charge", mats = {"1x Mageweave Cloth", "3x Solid Blasting Powder", "1x Unstable Trigger"}, texture = "Interface\\Icons\\spell_fire_selfdestruct", description = "Deals 450-751 Fire damage to enemies within 10 yards, also damages you." },
         { id = 61675, name = "Nordanaar Herbal Tea", mats = {"Quest: 1x Small Dream Shard"}, texture = "Interface\\Icons\\INV_Drink_Milk_05", description = "Restores 525 to 875 health and 810 to 1350 mana." },
         { id = 13462, name = "Purification Potion", mats = {"2x Icecap", "2x Plaguebloom", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_31", description = "Attempts to remove one Curse, one Disease and one Poison from the Imbiber." },
@@ -114,7 +115,8 @@ consumablesCategories = {
         { id = 20081, name = "Swiftness of Zanza", mats = {"Quest: 1x Zandalar Honor Token"}, texture = "Interface\\Icons\\inv_potion_31", description = "Increases the player's run speed by 20% for 2 hours." },
         { id = 8412, name = "Ground Scorpok Assay", mats = {"Quest: 1x Blasted Boar Lung", "2x Vulture Gizzard", "3x Scorpok Pincer"}, texture = "Interface\\Icons\\inv_misc_dust_02", description = "Increases Agility by 25 for 1 hour." },
         { id = 8410, name = "R.O.I.D.S.", mats = {"Quest: 1x Scorpok Pincer", "2x Blasted Boar Lung", "3x Snickerfang Jowl"}, texture = "Interface\\Icons\\inv_stone_15", description = "Increases Strength by 25 for 1 hour." },
-        { id = 8423, name = "Cerebral Cortex Compound", mats = {"Quest: 10x Basilisk Brain", "2x Vulture Gizzard"}, texture = "Interface\\Icons\\inv_potion_32", description = " Increases Intellect by 25 for 1 hour." }
+        { id = 8423, name = "Cerebral Cortex Compound", mats = {"Quest: 10x Basilisk Brain", "2x Vulture Gizzard"}, texture = "Interface\\Icons\\inv_potion_32", description = "Increases Intellect by 25 for 1 hour." },
+        { id = 9088, name = "Gift of Arthas", mats = {"1x Arthas' Tears", "1x Blindweed", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_28", description = "Increases resistance to shadow by 10. If an enemy strikes the imbiber, the attacker has a 30% chance of being inflicted with disease that increases their damage taken by 8 for 180 sec. Lasts for 1800 sec." },
     }
 }
 
