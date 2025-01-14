@@ -63,12 +63,12 @@
 
         if event == "BANKFRAME_OPENED" then
             isBankOpen = true
-        elseif not (isDefaultBankVisible or isOneBankVisible) then
-            isBankOpen = false
         elseif event == "MAIL_SHOW" then
             isMailOpen = true
         elseif event == "MAIL_CLOSED" then
             isMailOpen = false
+        elseif not (isDefaultBankVisible or isOneBankVisible) then
+            isBankOpen = false
         end
 
         if event == "PLAYER_LOGIN" then
