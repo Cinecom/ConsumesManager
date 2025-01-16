@@ -86,7 +86,7 @@ consumablesCategories = {
         { id = 51714, name = "Sweet Mountain Berry (Stamina)", mats = {"Gardening: Mountain Berry Bush Seeds"}, texture = "Interface\\Icons\\INV_Misc_Food_40", description = "Increases Stamina by 10 for 1 hour." },
         { id = 51717, name = "Hardened Mushroom", mats = {"Gardening: Magic Mushroom Spores"}, texture = "Interface\\Icons\\INV_Mushroom_11", description = "Increases 25 Stamina for 15 minutes." },
         { id = 51720, name = "Power Mushroom", mats = {"Gardening: Magic Mushroom Spores"}, texture = "Interface\\Icons\\INV_Mushroom_11", description = "Increases 20 Strength for 15 minutes." },
-        { id = 12218, name = "Baked Salmon", mats = {"1x Raw Whitescale Salmon", "1x Soothing Spices"}, texture = "Interface\\Icons\\INV_Misc_Fish_20", description = "Increases 14 Stamina and 14 Spirit for 15 minutes." },
+        { id = 13935, name = "Baked Salmon", mats = {"1x Raw Whitescale Salmon", "1x Soothing Spices"}, texture = "Interface\\Icons\\INV_Misc_Fish_20", description = "Increases 14 Stamina and 14 Spirit for 15 minutes." },
         { id = 13933, name = "Lobster Stew", mats = {"1x Darkclaw Lobster", "1x Refreshing Springwater"}, texture = "Interface\\Icons\\INV_Drink_17", description = "Increases 14 Stamina and 14 Spirit for 15 minutes." },
         { id = 12218, name = "Monster Omelet", mats = {"1x Giant Egg", "2x Soothing Spices"}, texture = "Interface\\Icons\\INV_Misc_Food_06", description = "Increases 12 Stamina and 12 Spirit for 15 minutes." },
         { id = 60977, name = "Danonzo's Tel'Abim Delight", mats = {"1x Gargantuan Tel'Abim Banana", "1x Soothing Spices", "1x Icecap"}, texture = "Interface\\Icons\\INV_Misc_Food_06", description = "Gain 22 spell damage for 15 minutes." },
@@ -95,8 +95,8 @@ consumablesCategories = {
         { id = 84041, name = "Gilneas Hot Stew", mats = {"1x Red Wolf Meat", "1x White Spider Meat", "1x Refreshing Spring Water"}, texture = "Interface\\Icons\\inv_drink_19", description = "Gain 12 spell damage for 15 minutes." },
         { id = 21217, name = "Sagefish Delight", mats = {"1x Raw Greater Sagefish", "1x Hot Spices"}, texture = "Interface\\Icons\\inv_misc_fish_21", description = "Gain 6 mana every 5 seconds for 15 minutes." },
         { id = 18045, name = "Tender Wolf Steak", mats = {"1x Tender Wolf Meat", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_food_47", description = "Gain 12 stamina and spirit for 15 minutes." },
-        { id = 13935, name = "Baked Salmon", mats = {"1x Raw Whitescale Salmon", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_fish_20", description = "Gain 14 stamina and spirit for 15 minutes." },
-        { id = 13933, name = "Lobster Stew", mats = {"1x Darkclaw Lobster", "1x Refreshing Spring Water"}, texture = "Interface\\Icons\\inv_drink_17", description = "Gain 14 stamina and spirit for 15 minutes." }
+        { id = 53015, name = "Gurubashi Gumbo", mats = {"1x Tender Crocolisk Meat","1x Tiger Meat","2x Mystery Meat","1x Hot Spices","1x Soothing Spices","1x Refreshing Spring Water"}, texture = "Interface\\Icons\\inv_drink_17", description = "Gain 10 stamina and 1% reduced chance to be criticall hit for 15 minutes." },
+        { id = 84040, name = "Le Fishe Au Chocolat", mats = {"1x Raw Whitescale Salmon","1x Soothing Spices","1x Premium Chocolate","1x Golden Sansam"}, texture = "Interface\\Icons\\INV_Misc_Fishe_Au_Chocolate", description = "Gain 1% dodge and 4 defense for 15 minutes." },
     },
     ["Alcohol"] = {
         { id = 18269, name = "Gordok Green Grog", mats = {"Bought from Stomper Kreeg after a Dire Maul Tribute run"}, texture = "Interface\\Icons\\INV_Drink_03", description = "Increases Stamina by 10 for 15 minutes." },
@@ -116,7 +116,8 @@ consumablesCategories = {
         { id = 8412, name = "Ground Scorpok Assay", mats = {"Quest: 1x Blasted Boar Lung", "2x Vulture Gizzard", "3x Scorpok Pincer"}, texture = "Interface\\Icons\\inv_misc_dust_02", description = "Increases Agility by 25 for 1 hour." },
         { id = 8410, name = "R.O.I.D.S.", mats = {"Quest: 1x Scorpok Pincer", "2x Blasted Boar Lung", "3x Snickerfang Jowl"}, texture = "Interface\\Icons\\inv_stone_15", description = "Increases Strength by 25 for 1 hour." },
         { id = 8423, name = "Cerebral Cortex Compound", mats = {"Quest: 10x Basilisk Brain", "2x Vulture Gizzard"}, texture = "Interface\\Icons\\inv_potion_32", description = "Increases Intellect by 25 for 1 hour." },
-        { id = 9088, name = "Gift of Arthas", mats = {"1x Arthas' Tears", "1x Blindweed", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_28", description = "Increases resistance to shadow by 10. If an enemy strikes the imbiber, the attacker has a 30% chance of being inflicted with disease that increases their damage taken by 8 for 180 sec. Lasts for 1800 sec." },
+        { id = 9088, name = "Gift of Arthas", mats = {"1x Arthas' Tears", "1x Blindweed", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_28", description = "Gain 10 shadow resistance for 30 minutes. Attackers have a 30% chance of increasing their damage taken by 8 for 3 minutes." },
+        { id = 10305, name = "Scroll of Protection IV", mats = {"Looted from various world NPC's"}, texture = "Interface\\Icons\\INV_Scroll_07", description = "Increases the target's Armor by 240 for 30 minutes." },
     }
 }
 
