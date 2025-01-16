@@ -96,7 +96,7 @@ consumablesCategories = {
         { id = 21217, name = "Sagefish Delight", mats = {"1x Raw Greater Sagefish", "1x Hot Spices"}, texture = "Interface\\Icons\\inv_misc_fish_21", description = "Gain 6 mana every 5 seconds for 15 minutes." },
         { id = 18045, name = "Tender Wolf Steak", mats = {"1x Tender Wolf Meat", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_food_47", description = "Gain 12 stamina and spirit for 15 minutes." },
         { id = 53015, name = "Gurubashi Gumbo", mats = {"1x Tender Crocolisk Meat","1x Tiger Meat","2x Mystery Meat","1x Hot Spices","1x Soothing Spices","1x Refreshing Spring Water"}, texture = "Interface\\Icons\\inv_drink_17", description = "Gain 10 stamina and 1% reduced chance to be criticall hit for 15 minutes." },
-        { id = 84040, name = "Le Fishe Au Chocolat", mats = {"1x Raw Whitescale Salmon","1x Soothing Spices","1x Premium Chocolate","1x Golden Sansam"}, texture = "Interface\\Icons\\INV_Misc_Fishe_Au_Chocolate", description = "Gain 1% dodge and 4 defense for 15 minutes." },
+        { id = 84040, name = "Le Fishe Au Chocolat", mats = {"1x Raw Whitescale Salmon","1x Soothing Spices","1x Premium Chocolate","1x Golden Sansam"}, texture = "Interface\\Icons\\INV_Misc_Fishe_Au_Chocolate", description = "Gain 1% dodge and 4 defense for 15 minutes." }
     },
     ["Alcohol"] = {
         { id = 18269, name = "Gordok Green Grog", mats = {"Bought from Stomper Kreeg after a Dire Maul Tribute run"}, texture = "Interface\\Icons\\INV_Drink_03", description = "Increases Stamina by 10 for 15 minutes." },
@@ -109,7 +109,8 @@ consumablesCategories = {
         { id = 12451, name = "Juju Power", mats = {"Quest: 3x Winterfall E'ko (Kill Furbolgs)"}, texture = "Interface\\Icons\\INV_Misc_MonsterScales_11", description = "Increases Strength by 30 for 30 minutes." },
         { id = 12460, name = "Juju Might", mats = {"Quest: 3x Frostmaul E'ko (Kill Frostmaul Giants)"}, texture = "Interface\\Icons\\INV_Misc_MonsterScales_07", description = "Increases Attack Power by 40 for 30 minutes." },
         { id = 12455, name = "Juju Ember", mats = {"Quest: 3x Shardtooth E'ko (Kill Bears)"}, texture = "Interface\\Icons\\INV_Misc_MonsterScales_15", description = "Increases Fire Resistance by 15 for 30 minutes." },
-        { id = 12457, name = "Juju Chill", mats = {"Quest: 3x Chillwind E'ko (Kill Flying Chillwinds)"}, texture = "Interface\\Icons\\INV_Misc_MonsterScales_09", description = "Increase Frost resistance by 15 for 10 minutes." },
+        { id = 12457, name = "Juju Chill", mats = {"Quest: 3x Chillwind E'ko (Kill Frostsabers)"}, texture = "Interface\\Icons\\INV_Misc_MonsterScales_09", description = "Increase Frost resistance by 15 for 10 minutes." },
+        { id = 12450, name = "Juju Flurry", mats = {"Quest: 3x Frostsaber E'ko (Kill Flying Chillwinds)"}, texture = "Interface\\Icons\\inv_misc_monsterscales_17", description = "Increases attack speed by 3% for 20 seconds." },
         { id = 12820, name = "Winterfall Firewater", mats = {"Drops from Furbolgs in Winterspring"}, texture = "Interface\\Icons\\INV_Potion_92", description = "Increases Attack Power by 35 for 20 minutes." },
         { id = 20079, name = "Spirit of Zanza", mats = {"Quest: 1x Zandalar Honor Token"}, texture = "Interface\\Icons\\INV_Potion_30", description = "Increases the player's Spirit by 50 and Stamina by 50 for 2 hours." },
         { id = 20081, name = "Swiftness of Zanza", mats = {"Quest: 1x Zandalar Honor Token"}, texture = "Interface\\Icons\\inv_potion_31", description = "Increases the player's run speed by 20% for 2 hours." },
