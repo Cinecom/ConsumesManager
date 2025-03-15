@@ -13,6 +13,11 @@ Unzip the file and place the 'ConsumesManager' folder in your /Interface/AddOns 
 Click the mini-map icon to open/close the Tracker. For a detailled overview watch the tutorial video on top.
 
 ## Changelog
+**2.0.3**
+```
+- Fixed a bug where multi-account characters where not selected by default
+```
+
 **2.0.2**
 ```
 - Fixed a compatibility issue with other addons where the bank would not scan
