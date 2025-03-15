@@ -3951,7 +3951,6 @@ end
 
 
     function combineVariableTables(compressed_message)
-
         local receivedTable = {}
         local realmName = GetRealmName()
         local faction = UnitFactionGroup("player")
@@ -3962,6 +3961,13 @@ end
 
         local existingTable = ConsumesManager_Data[realmName][faction]
 
+        -- Auto-select new characters
+        ConsumesManager_Options["Characters"] = ConsumesManager_Options["Characters"] or {}
+        for characterName, _ in pairs(receivedTable) do
+            if ConsumesManager_Options["Characters"][characterName] == nil then
+                ConsumesManager_Options["Characters"][characterName] = true
+            end
+        end
 
         local function mergeTables(original, newData)
             for key, value in newData do
@@ -3975,7 +3981,6 @@ end
 
         mergeTables(existingTable, receivedTable)
         ConsumesManager_UpdateAllContent()
-
     end
 
 -- BASE64 ENCODE AND DECODE --------------------------------------------------------------------------------------------------
