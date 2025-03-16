@@ -16,7 +16,8 @@ consumablesCategories = {
         { id = 21546, name = "Elixir of Greater Firepower", mats = {"3x Fire Oil", "3x Firebloom", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_60", description = "Increases spell fire damage by up to 40 for 1 hour." },
         { id = 3386, name = "Elixir of Poison Resistance", mats = {"1x Large Venom Sac", "1x Bruiseweed", "1x Leaded Vial"}, texture = "Interface\\Icons\\INV_Potion_12", description = "Imbiber is cured of up to four poisons up to level 60." },
         { id = 9264, name = "Elixir of Shadow Power", mats = {"3x Ghost Mushroom", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_46", description = "Increases spell shadow damage by up to 40 for 30 minutes." },
-        { id = 61224, name = "Dreamshard Elixir", mats = {"1x Dream Dust", "1x Small Dream Shard", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_12", description = "Grants 2% spell critical and 15 spell power for 1 hour." }
+        { id = 61224, name = "Dreamshard Elixir", mats = {"1x Dream Dust", "1x Small Dream Shard", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_12", description = "Grants 2% spell critical and 15 spell power for 1 hour." },
+        { id = 9224, name = "Elixir of Demonslaying", mats = {"1x Gromsblood", "1x Ghost Mushroom", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_27", description = "Increases attack power by 265 against demons for 5 min." },
     },
     ["Flasks"] = {
         { id = 13513, name = "Flask of Chromatic Resistance", mats = {"30x Icecap", "10x Mountain Silversage", "1x Black Lotus", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_48", description = "Increases your resistance to all schools of magic by 25 for 2 hours." },
