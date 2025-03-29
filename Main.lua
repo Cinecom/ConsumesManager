@@ -3526,8 +3526,12 @@ function ConsumesManager_ScanPlayerBank()
             ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
             ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
             local data = ConsumesManager_Data[realmName][faction][playerName]
-            data["bank"] = {}
-
+            
+            -- Initialize bank data if it doesn't exist yet
+            data["bank"] = data["bank"] or {}
+            
+            -- Create a temporary table to track what we find
+            local tempBankData = {}
 
             for bag = -1, 10 do
                 if bag == -1 or (bag >= 5 and bag <= 10) then
@@ -3543,7 +3547,7 @@ function ConsumesManager_ScanPlayerBank()
                                         local _, itemCount = GetContainerItemInfo(bag, slot)
                                         if itemCount and itemCount ~= 0 then
                                             if itemCount < 0 then itemCount = -itemCount end
-                                            data["bank"][itemID] = (data["bank"][itemID] or 0) + itemCount
+                                            tempBankData[itemID] = (tempBankData[itemID] or 0) + itemCount
                                         end
                                     end
                                 end
@@ -3553,12 +3557,16 @@ function ConsumesManager_ScanPlayerBank()
                 end
             end
 
+            -- Update only the items we found, preserve existing data for items we didn't scan
+            for itemID, count in pairs(tempBankData) do
+                data["bank"][itemID] = count
+            end
+
             ConsumesManager_UpdateManagerContent()
             ConsumesManager_UpdateTabStates()
             delayFrameBank:SetScript("OnUpdate", nil)
         end
     end)
-    
 end
 
 function ConsumesManager_ScanPlayerMail()

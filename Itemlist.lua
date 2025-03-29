@@ -32,7 +32,9 @@ consumablesCategories = {
         { id = 13458, name = "Greater Nature Protection Potion", mats = {"1x Elemental Earth", "1x Dreamfoil", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_22", description = "Absorbs 1950 to 3250 Nature damage for 1 hour." },
         { id = 13459, name = "Greater Shadow Protection Potion", mats = {"1x Shadow Oil", "2x Arthas' Tears", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_23", description = "Absorbs 1950 to 3250 Shadow damage for 1 hour." },
         { id = 13461, name = "Greater Arcane Protection Potion", mats = {"1x Dream Dust", "1x Dreamfoil", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_83", description = "Absorbs 1950 to 3250 Arcane damage for 1 hour." },
-        { id = 13460, name = "Greater Holy Protection Potion", mats = {"1x Elemental Air", "1x Golden Sansam", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_09", description = "Absorbs 1950 to 3251 holy damage for 1 hour." }
+        { id = 13460, name = "Greater Holy Protection Potion", mats = {"1x Elemental Air", "1x Golden Sansam", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_09", description = "Absorbs 1950 to 3251 holy damage for 1 hour." },
+        { id = 9036, name = "Magic Resistance Potion", mats = {"1x Khadgar's Whisker", "1x Purple Lotus", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_16", description = "Increases your resistance to all schools of magic by 50 for 3 minutes." },
+        { id = 3384, name = "Minor Magic Resistance Potion", mats = {"3x Mage Royal", "1x Wild Steelbloom", "1x Empty Vial"}, texture = "Interface\\Icons\\INV_Potion_08", description = "Increases your resistance to all schools of magic by 25 for 3 minutes." }
     },
     ["Weapon Enhancements"] = {
         { id = 12404, name = "Dense Sharpening Stone", mats = {"1x Dense Stone"}, texture = "Interface\\Icons\\INV_Stone_SharpeningStone_05", description = "Increases weapon damage by 8 for 30 minutes." },
@@ -76,7 +78,9 @@ consumablesCategories = {
         { id = 14530, name = "Heavy Runecloth Bandage", mats = {"2x Runecloth"}, texture = "Interface\\Icons\\inv_misc_bandage_12", description = "Heals 2000 damage over 8 sec." },
         { id = 13180, name = "Stratholme Holy Water", mats = {"Looted from Crates in Stratholme"}, texture = "Interface\\Icons\\inv_potion_75", description = "Inflicts between 438 and 562 damage to Undead in a 10 yard radius." },
         { id = 20520, name = "Dark Rune", mats = {"Looted from NPC's in Stratholme"}, texture = "Interface\\Icons\\spell_shadow_sealofkings", description = "Restores 900 to 1501 mana at the cost of 600 to 1001 life." },
-        { id = 12662, name = "Demonic Rune", mats = {"Looted from various world NPC's"}, texture = "Interface\\Icons\\inv_misc_rune_04", description = "Restores 900 to 1501 mana at the cost of 600 to 1001 life." }
+        { id = 12662, name = "Demonic Rune", mats = {"Looted from various world NPC's"}, texture = "Interface\\Icons\\inv_misc_rune_04", description = "Restores 900 to 1501 mana at the cost of 600 to 1001 life." },
+        { id = 9172, name = "Invisibility Potion", mats = {"1x Ghost Mushroom", "1x Sungrass", "1x Crystal Vial"}, texture = "Interface\\Icons\\inv_potion_25", description = "Gives the imbiber invisibility for 18 sec." },
+        { id = 3823, name = "Lesser Invisibility Potion", mats = {"1x Fadeleaf", "1x Wild Steelbloom", "1x Leaded Vial"}, texture = "Interface\\Icons\\inv_potion_18", description = " Gives the imbiber lesser invisibility for 15 sec." }
     },
     ["Food Buffs"] = {
         { id = 21023, name = "Dirge's Kickin' Chimaerok Chops", mats = {"1x Hot Spices", "1x Goblin Rocket Fuel", "1x Deeprock Salt", "1x Chimaerok Tenderloin"}, texture = "Interface\\Icons\\INV_Misc_Food_65", description = "Increases Strength by 25 for 1 hour." },
