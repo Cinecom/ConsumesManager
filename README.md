@@ -13,6 +13,11 @@ Unzip the file and place the 'ConsumesManager' folder in your /Interface/AddOns 
 Click the mini-map icon to open/close the Tracker. For a detailled overview watch the tutorial video on top.
 
 ## Changelog
+**2.1.0**
+```
+- Added a new feature which makes the addon crossfaction compatible
+```
+
 **2.0.4**
 ```
 - Fixed a bug where the count of the consumes in your bank would reset

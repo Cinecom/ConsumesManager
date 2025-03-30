@@ -72,6 +72,44 @@
         end
 
         if event == "PLAYER_LOGIN" then
+
+
+        function ConsumesManager_CheckVersionUpdate()
+            -- Initialize options if needed
+            ConsumesManager_Options = ConsumesManager_Options or {}
+            
+            -- Check if we've already shown the popup for this version
+            if not ConsumesManager_Options.LastVersionReset or ConsumesManager_Options.LastVersionReset ~= GetAddOnMetadata("ConsumesManager", "Version") then
+                -- Show the popup with a slight delay to ensure UI is loaded
+                local delayFrame = CreateFrame("Frame")
+                delayFrame:SetScript("OnUpdate", function()
+                    local elapsed = 0
+                    elapsed = elapsed + arg1
+                    if elapsed >= 1 then
+                        ConsumesManager_ShowVersionUpdatePopup()
+                        delayFrame:SetScript("OnUpdate", nil)
+                    end
+                end)
+            end
+        end
+
+        -- Find this in your existing code, typically in a function that runs when the addon loads
+        local ConsumesManager_EventFrame = CreateFrame("Frame")
+        ConsumesManager_EventFrame:RegisterEvent("PLAYER_LOGIN")
+        ConsumesManager_EventFrame:SetScript("OnEvent", function()
+            if event == "PLAYER_LOGIN" then
+                -- Your existing code...
+                
+                -- Add this line to check for version updates
+                ConsumesManager_CheckVersionUpdate()
+                
+                -- Continue with your existing code...
+            end
+        end)
+
+
+
+
             if ConsumesManager_Options and ConsumesManager_Options.Channel and ConsumesManager_Options.Password then
                 local channelName = DecodeMessage(ConsumesManager_Options.Channel)
                 local channelPassword = DecodeMessage(ConsumesManager_Options.Password)
@@ -127,6 +165,136 @@
         end
     end)
 
+
+-- Plugin Reset on New Version
+
+function ConsumesManager_ShowVersionUpdatePopup()
+    -- Check if a popup already exists
+    if ConsumesManager_VersionUpdateFrame then
+        return
+    end
+    
+    -- Create the popup frame
+    local popup = CreateFrame("Frame", "ConsumesManager_VersionUpdateFrame", UIParent)
+    popup:SetWidth(400)
+    popup:SetHeight(200)
+    popup:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    popup:SetFrameStrata("DIALOG")
+    popup:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true, tileSize = 32, edgeSize = 32,
+        insets = { left = 11, right = 12, top = 12, bottom = 11 }
+    })
+    popup:SetBackdropColor(0, 0, 0, 1)
+    popup:EnableMouse(true)
+    popup:SetMovable(true)
+    popup:RegisterForDrag("LeftButton")
+    popup:SetScript("OnDragStart", function() this:StartMoving() end)
+    popup:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+    
+    -- Add a title
+    local title = popup:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", popup, "TOP", 0, -20)
+    title:SetText("ConsumesManager Update " .. GetAddOnMetadata("ConsumesManager", "Version"))
+    title:SetTextColor(1, 0.8, 0)
+    
+    -- Add a message
+    local message = popup:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    message:SetPoint("TOP", title, "BOTTOM", 0, -20)
+    message:SetWidth(360)
+    message:SetText("This version adds cross-faction support, allowing you to track and trade consumables with characters from both factions.\n\nYou need to reset the addon to update the data structure. Don't worry, your settings will be preserved!")
+    message:SetJustifyH("CENTER")
+    
+    -- Create Reset Button
+    local resetButton = CreateFrame("Button", nil, popup, "UIPanelButtonTemplate")
+    resetButton:SetWidth(100)
+    resetButton:SetHeight(24)
+    resetButton:SetPoint("BOTTOM", popup, "BOTTOM", 0, 40)
+    resetButton:SetText("Reset Now")
+    resetButton:SetScript("OnClick", function()
+        -- Store that we've shown this version popup
+        ConsumesManager_Options = ConsumesManager_Options or {}
+        ConsumesManager_Options.LastVersionReset = GetAddOnMetadata("ConsumesManager", "Version")
+        
+        -- Reset the addon data structures, preserving important settings
+        local channelInfo = nil
+        local passwordInfo = nil
+        local characterOptions = nil
+        local enableCategories = nil
+        local showUseButton = nil
+        local selectedItems = nil
+        
+        -- Backup important settings
+        if ConsumesManager_Options then
+            channelInfo = ConsumesManager_Options.Channel
+            passwordInfo = ConsumesManager_Options.Password
+            characterOptions = ConsumesManager_Options.Characters
+            enableCategories = ConsumesManager_Options.enableCategories
+            showUseButton = ConsumesManager_Options.showUseButton
+        end
+        
+        if ConsumesManager_SelectedItems then
+            selectedItems = {}
+            for id, selected in pairs(ConsumesManager_SelectedItems) do
+                selectedItems[id] = selected
+            end
+        end
+        
+        -- Reset data
+        ConsumesManager_Data = {}
+        
+        -- Restore important settings
+        ConsumesManager_Options = {
+            Channel = channelInfo,
+            Password = passwordInfo,
+            Characters = characterOptions,
+            enableCategories = enableCategories,
+            showUseButton = showUseButton,
+            LastVersionReset = GetAddOnMetadata("ConsumesManager", "Version")
+        }
+        
+        ConsumesManager_SelectedItems = selectedItems or {}
+        
+        -- Close the popup
+        popup:Hide()
+        
+        -- Reload UI
+        ReloadUI()
+    end)
+    
+    -- Create Later Button
+    local laterButton = CreateFrame("Button", nil, popup, "UIPanelButtonTemplate")
+    laterButton:SetWidth(100)
+    laterButton:SetHeight(24)
+    laterButton:SetPoint("BOTTOMLEFT", popup, "BOTTOMLEFT", 30, 40)
+    laterButton:SetText("Later")
+    laterButton:SetScript("OnClick", function()
+        popup:Hide()
+    end)
+    
+    -- Create Skip Button (never show again)
+    local skipButton = CreateFrame("Button", nil, popup, "UIPanelButtonTemplate")
+    skipButton:SetWidth(100)
+    skipButton:SetHeight(24)
+    skipButton:SetPoint("BOTTOMRIGHT", popup, "BOTTOMRIGHT", -30, 40)
+    skipButton:SetText("Skip")
+    skipButton:SetScript("OnClick", function()
+        -- Store that we've shown this version popup even if they didn't reset
+        ConsumesManager_Options = ConsumesManager_Options or {}
+        ConsumesManager_Options.LastVersionReset = GetAddOnMetadata("ConsumesManager", "Version")
+        popup:Hide()
+    end)
+    
+    -- Close button in corner
+    local closeButton = CreateFrame("Button", nil, popup, "UIPanelCloseButton")
+    closeButton:SetPoint("TOPRIGHT", popup, "TOPRIGHT", -5, -5)
+    closeButton:SetScript("OnClick", function()
+        popup:Hide()
+    end)
+    
+    popup:Show()
+end
 
 -- Main Windows Setup -----------------------------------------------------------------------------------
 function ConsumesManager_CreateMainWindow()
@@ -699,19 +867,13 @@ function ConsumesManager_UpdateManagerContent()
 
     local ManagerFrame = ConsumesManager_MainFrame.tabs[1]
     local realmName = GetRealmName()
-    local faction = UnitFactionGroup("player")
     local playerName = UnitName("player")
 
     -- Ensure data structure exists
-    ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
-    ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
-    local data = ConsumesManager_Data[realmName][faction]
-
-    -- Check if bank and mail have been scanned for current character
-    local currentCharData = data[playerName]
-    local bankScanned = currentCharData and currentCharData["bank"] ~= nil
-    local mailScanned = currentCharData and currentCharData["mail"] ~= nil
-
+    if not ConsumesManager_Data[realmName] then
+        ConsumesManager_Data[realmName] = {}
+    end
+    
     -- Hide the message label and order buttons by default
     ManagerFrame.messageLabel:Hide()
     ManagerFrame.orderByNameButton:Hide()
@@ -728,6 +890,11 @@ function ConsumesManager_UpdateManagerContent()
     -- Reset the scrollChild height
     ManagerFrame.scrollChild.contentHeight = 0
     ManagerFrame.scrollChild:SetHeight(0)
+
+    -- Check if bank and mail have been scanned for current character
+    local currentCharData = ConsumesManager_Data[realmName][playerName]
+    local bankScanned = currentCharData and currentCharData["bank"] ~= nil
+    local mailScanned = currentCharData and currentCharData["mail"] ~= nil
 
     if not bankScanned or not mailScanned then
         -- Show message
@@ -766,12 +933,15 @@ function ConsumesManager_UpdateManagerContent()
                 if ConsumesManager_SelectedItems[itemID] then
                     -- Sum counts across all selected characters
                     local totalCount = 0
-                    for character, charData in pairs(data) do
-                        if ConsumesManager_Options["Characters"][character] == true then
-                            local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
-                            local bank = charData["bank"] and charData["bank"][itemID] or 0
-                            local mail = charData["mail"] and charData["mail"][itemID] or 0
-                            totalCount = totalCount + inventory + bank + mail
+                    for character, _ in pairs(ConsumesManager_Data[realmName]) do
+                        if type(ConsumesManager_Data[realmName][character]) == "table" and ConsumesManager_Options["Characters"][character] == true then
+                            -- Make sure it's not a special field like "faction"
+                            if character ~= "faction" then
+                                local inventory = ConsumesManager_Data[realmName][character]["inventory"] and ConsumesManager_Data[realmName][character]["inventory"][itemID] or 0
+                                local bank = ConsumesManager_Data[realmName][character]["bank"] and ConsumesManager_Data[realmName][character]["bank"][itemID] or 0
+                                local mail = ConsumesManager_Data[realmName][character]["mail"] and ConsumesManager_Data[realmName][character]["mail"][itemID] or 0
+                                totalCount = totalCount + inventory + bank + mail
+                            end
                         end
                     end
                     table.insert(enabledItems, {itemInfo = itemInfo, totalCount = totalCount})
@@ -827,7 +997,7 @@ function ConsumesManager_UpdateManagerContent()
                     end
 
                     -- Enable or disable the 'Use' button based on whether the item is in the player's inventory
-                    local playerInventory = data[playerName]["inventory"] or {}
+                    local playerInventory = ConsumesManager_Data[realmName][playerName]["inventory"] or {}
                     local countInInventory = playerInventory[itemID] or 0
 
                     if ConsumesManager_Options.showUseButton then
@@ -872,12 +1042,14 @@ function ConsumesManager_UpdateManagerContent()
                 if ConsumesManager_SelectedItems[itemID] then
                     -- Sum counts across all selected characters
                     local totalCount = 0
-                    for character, charData in pairs(data) do
-                        if ConsumesManager_Options["Characters"][character] == true then
-                            local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
-                            local bank = charData["bank"] and charData["bank"][itemID] or 0
-                            local mail = charData["mail"] and charData["mail"][itemID] or 0
-                            totalCount = totalCount + inventory + bank + mail
+                    for character, charData in pairs(ConsumesManager_Data[realmName]) do
+                        if type(charData) == "table" and ConsumesManager_Options["Characters"][character] == true then
+                            if character ~= "faction" then
+                                local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
+                                local bank = charData["bank"] and charData["bank"][itemID] or 0
+                                local mail = charData["mail"] and charData["mail"][itemID] or 0
+                                totalCount = totalCount + inventory + bank + mail
+                            end
                         end
                     end
                     table.insert(allItems, {itemInfo = itemInfo, totalCount = totalCount})
@@ -928,7 +1100,7 @@ function ConsumesManager_UpdateManagerContent()
             end
 
             -- Enable or disable the 'Use' button based on whether the item is in the player's inventory
-            local playerInventory = data[playerName]["inventory"] or {}
+            local playerInventory = ConsumesManager_Data[realmName][playerName]["inventory"] or {}
             local countInInventory = playerInventory[itemID] or 0
 
             if showUseButton then
@@ -1756,11 +1928,7 @@ function ConsumesManager_UpdatePresetsConsumables()
 
     -- Ensure data structure exists
     local realmName = GetRealmName()
-    local faction = UnitFactionGroup("player")
     local playerName = UnitName("player")
-
-
-    local data = ConsumesManager_Data[realmName][faction]
 
     -- Populate the consumables list based on presetIDs
     -- Initialize tables
@@ -1795,12 +1963,12 @@ function ConsumesManager_UpdatePresetsConsumables()
         if id and consumablesList[id] then
             -- Calculate total count across selected characters
             local totalCount = 0
-            if data and ConsumesManager_SelectedItems and ConsumesManager_Options.Characters and type(ConsumesManager_Options.Characters) == "table" then
+            if ConsumesManager_Data[realmName] and ConsumesManager_SelectedItems and ConsumesManager_Options.Characters and type(ConsumesManager_Options.Characters) == "table" then
                 for character, isSelected in pairs(ConsumesManager_Options.Characters) do
-                    if isSelected and data[character] and type(data[character]) == "table" then
-                        local charInventory = data[character].inventory or {}
-                        local charBank = data[character].bank or {}
-                        local charMail = data[character].mail or {}
+                    if isSelected and ConsumesManager_Data[realmName][character] and type(ConsumesManager_Data[realmName][character]) == "table" then
+                        local charInventory = ConsumesManager_Data[realmName][character].inventory or {}
+                        local charBank = ConsumesManager_Data[realmName][character].bank or {}
+                        local charMail = ConsumesManager_Data[realmName][character].mail or {}
                         totalCount = totalCount + (charInventory[id] or 0) + (charBank[id] or 0) + (charMail[id] or 0)
                     end
                 end
@@ -2015,7 +2183,9 @@ function ConsumesManager_UpdatePresetsConsumables()
 
                         -- Enable or disable "Use" button based on inventory
                         if useButton then
-                            local playerInventory = (data and data[playerName] and data[playerName].inventory) or {}
+                            local playerInventory = (ConsumesManager_Data[realmName] and 
+                                                   ConsumesManager_Data[realmName][playerName] and 
+                                                   ConsumesManager_Data[realmName][playerName].inventory) or {}
                             local countInInventory = playerInventory[consumable.id] or 0
 
                             if countInInventory > 0 then
@@ -2107,7 +2277,9 @@ function ConsumesManager_UpdatePresetsConsumables()
 
                 -- Enable or disable "Use" button based on inventory
                 if useButton then
-                    local playerInventory = (data and data[playerName] and data[playerName].inventory) or {}
+                    local playerInventory = (ConsumesManager_Data[realmName] and 
+                                           ConsumesManager_Data[realmName][playerName] and 
+                                           ConsumesManager_Data[realmName][playerName].inventory) or {}
                     local countInInventory = playerInventory[consumable.id] or 0
 
                     if countInInventory > 0 then
@@ -2211,28 +2383,55 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
     ConsumesManager_Options.showUseButton = (ConsumesManager_Options.showUseButton == nil) and true or ConsumesManager_Options.showUseButton
 
     local realmName = GetRealmName()
-    local faction = UnitFactionGroup("player")
     local playerName = UnitName("player")
+    local playerFaction = UnitFactionGroup("player")
 
+    -- Build character list with faction info
     local characterList = {}
-    if ConsumesManager_Data[realmName] and ConsumesManager_Data[realmName][faction] then
-        for characterName, _ in pairs(ConsumesManager_Data[realmName][faction]) do
-            table.insert(characterList, characterName)
+    if ConsumesManager_Data[realmName] then
+        for characterName, charData in pairs(ConsumesManager_Data[realmName]) do
+            if type(charData) == "table" then
+                table.insert(characterList, {
+                    name = characterName,
+                    faction = charData.faction or "Unknown"
+                })
+            end
         end
     end
 
     local playerInList = false
-    for _, name in ipairs(characterList) do
-        if name == playerName then
+    for _, charInfo in ipairs(characterList) do
+        if charInfo.name == playerName then
             playerInList = true
             break
         end
     end
     if not playerInList then
-        table.insert(characterList, playerName)
+        table.insert(characterList, {
+            name = playerName,
+            faction = playerFaction
+        })
     end
 
-    table.sort(characterList)
+    -- Create faction-specific character lists
+    local allianceCharacters = {}
+    local hordeCharacters = {}
+    
+    for _, charInfo in ipairs(characterList) do
+        if charInfo.faction == "Alliance" then
+            table.insert(allianceCharacters, charInfo)
+        elseif charInfo.faction == "Horde" then
+            table.insert(hordeCharacters, charInfo)
+        else
+            -- For characters with unknown faction, add to both lists
+            table.insert(allianceCharacters, charInfo)
+            table.insert(hordeCharacters, charInfo)
+        end
+    end
+    
+    -- Sort characters by name
+    table.sort(allianceCharacters, function(a, b) return a.name < b.name end)
+    table.sort(hordeCharacters, function(a, b) return a.name < b.name end)
 
     -- Title
     local title = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -2241,66 +2440,147 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
     title:SetTextColor(1, 1, 1)
 
     local startYOffset = -20
+    local currentYOffset = startYOffset
 
-    -- Character Checkboxes
-    for _, characterName in ipairs(characterList) do
-        index = index + 1
-        local currentCharacterName = characterName
+    -- Track whether we have characters from each faction
+    local hasAlliance = table.getn(allianceCharacters) > 0
+    local hasHorde = table.getn(hordeCharacters) > 0
 
-        local itemFrame = CreateFrame("Frame", "ConsumesManager_CharacterFrame" .. index, scrollChild)
-        itemFrame:SetWidth(WindowWidth - 10)
-        itemFrame:SetHeight(18)
-        itemFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - (index - 1) * lineHeight)
+    -- First add Alliance section if there are Alliance characters
+    if hasAlliance then
+        -- Alliance Header
+        local allianceHeader = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        allianceHeader:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
+        allianceHeader:SetText("|cff0078ffAlliance Characters:|r")
+        allianceHeader:SetJustifyH("LEFT")
+        currentYOffset = currentYOffset - lineHeight
 
-        local checkbox = CreateFrame("CheckButton", "ConsumesManager_CharacterCheckbox" .. index, itemFrame)
-        checkbox:SetWidth(16)
-        checkbox:SetHeight(16)
-        checkbox:SetPoint("LEFT", itemFrame, "LEFT", 0, 0)
+        -- Alliance Characters
+        for i, charInfo in ipairs(allianceCharacters) do
+            local currentCharacterName = charInfo.name
+            
+            local itemFrame = CreateFrame("Frame", "ConsumesManager_AllianceCharFrame" .. i, scrollChild)
+            itemFrame:SetWidth(WindowWidth - 10)
+            itemFrame:SetHeight(18)
+            itemFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, currentYOffset)
 
-        checkbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
-        checkbox:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down")
-        checkbox:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
-        checkbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
+            local checkbox = CreateFrame("CheckButton", "ConsumesManager_AllianceCharCheckbox" .. i, itemFrame)
+            checkbox:SetWidth(16)
+            checkbox:SetHeight(16)
+            checkbox:SetPoint("LEFT", itemFrame, "LEFT", 0, 0)
 
-        local label = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
-        label:SetText(currentCharacterName)
-        label:SetJustifyH("LEFT")
+            checkbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
+            checkbox:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down")
+            checkbox:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
+            checkbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
 
-        checkbox:SetScript("OnClick", function()
-            ConsumesManager_Options["Characters"][currentCharacterName] = (checkbox:GetChecked() == 1)
-            ConsumesManager_UpdateAllContent()
-        end)
+            local label = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
+            label:SetText(currentCharacterName)
+            label:SetTextColor(0, 0.48, 1) -- Blue for Alliance
+            label:SetJustifyH("LEFT")
 
-        if ConsumesManager_Options["Characters"][currentCharacterName] == nil then
-            checkbox:SetChecked(true)
-            ConsumesManager_Options["Characters"][currentCharacterName] = true
-        else
-            checkbox:SetChecked(ConsumesManager_Options["Characters"][currentCharacterName] == true)
+            checkbox:SetScript("OnClick", function()
+                ConsumesManager_Options["Characters"][currentCharacterName] = (checkbox:GetChecked() == 1)
+                ConsumesManager_UpdateAllContent()
+            end)
+
+            if ConsumesManager_Options["Characters"][currentCharacterName] == nil then
+                checkbox:SetChecked(true)
+                ConsumesManager_Options["Characters"][currentCharacterName] = true
+            else
+                checkbox:SetChecked(ConsumesManager_Options["Characters"][currentCharacterName] == true)
+            end
+
+            parentFrame.checkboxes[currentCharacterName] = checkbox
+            itemFrame:EnableMouse(true)
+            itemFrame:SetScript("OnMouseDown", function()
+                checkbox:Click()
+            end)
+            
+            currentYOffset = currentYOffset - lineHeight
+            index = index + 1
         end
-
-        parentFrame.checkboxes[currentCharacterName] = checkbox
-        itemFrame:EnableMouse(true)
-        itemFrame:SetScript("OnMouseDown", function()
-            checkbox:Click()
-        end)
+        
+        -- Add extra spacing after Alliance section
+        currentYOffset = currentYOffset - lineHeight / 2
     end
 
-    index = index + 1
+    -- Then add Horde section if there are Horde characters
+    if hasHorde then
+        -- Horde Header
+        local hordeHeader = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        hordeHeader:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
+        hordeHeader:SetText("|cffb30000Horde Characters:|r")
+        hordeHeader:SetJustifyH("LEFT")
+        currentYOffset = currentYOffset - lineHeight
+
+        -- Horde Characters
+        for i, charInfo in ipairs(hordeCharacters) do
+            local currentCharacterName = charInfo.name
+            
+            local itemFrame = CreateFrame("Frame", "ConsumesManager_HordeCharFrame" .. i, scrollChild)
+            itemFrame:SetWidth(WindowWidth - 10)
+            itemFrame:SetHeight(18)
+            itemFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, currentYOffset)
+
+            local checkbox = CreateFrame("CheckButton", "ConsumesManager_HordeCharCheckbox" .. i, itemFrame)
+            checkbox:SetWidth(16)
+            checkbox:SetHeight(16)
+            checkbox:SetPoint("LEFT", itemFrame, "LEFT", 0, 0)
+
+            checkbox:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up")
+            checkbox:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down")
+            checkbox:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
+            checkbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
+
+            local label = itemFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            label:SetPoint("LEFT", checkbox, "RIGHT", 4, 0)
+            label:SetText(currentCharacterName)
+            label:SetTextColor(0.7, 0, 0) -- Red for Horde
+            label:SetJustifyH("LEFT")
+
+            checkbox:SetScript("OnClick", function()
+                ConsumesManager_Options["Characters"][currentCharacterName] = (checkbox:GetChecked() == 1)
+                ConsumesManager_UpdateAllContent()
+            end)
+
+            if ConsumesManager_Options["Characters"][currentCharacterName] == nil then
+                checkbox:SetChecked(true)
+                ConsumesManager_Options["Characters"][currentCharacterName] = true
+            else
+                checkbox:SetChecked(ConsumesManager_Options["Characters"][currentCharacterName] == true)
+            end
+
+            parentFrame.checkboxes[currentCharacterName] = checkbox
+            itemFrame:EnableMouse(true)
+            itemFrame:SetScript("OnMouseDown", function()
+                checkbox:Click()
+            end)
+            
+            currentYOffset = currentYOffset - lineHeight
+            index = index + 1
+        end
+        
+        -- Add extra spacing after Horde section
+        currentYOffset = currentYOffset - lineHeight / 2
+    end
+
+    -- Ensure we have a good spacing after character lists
+    currentYOffset = currentYOffset - lineHeight / 2
 
     -- General Settings Title
     local generalSettingsTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    generalSettingsTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight)
+    generalSettingsTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
     generalSettingsTitle:SetText("General Settings")
     generalSettingsTitle:SetTextColor(1, 1, 1)
-
-    index = index + 1
+    currentYOffset = currentYOffset - lineHeight
 
     -- Enable Categories Checkbox
     local enableCategoriesFrame = CreateFrame("Frame", "ConsumesManager_EnableCategoriesFrame", scrollChild)
     enableCategoriesFrame:SetWidth(WindowWidth - 10)
     enableCategoriesFrame:SetHeight(18)
-    enableCategoriesFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight)
+    enableCategoriesFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
     enableCategoriesFrame:EnableMouse(true)
 
     local enableCategoriesCheckbox = CreateFrame("CheckButton", "ConsumesManager_EnableCategoriesCheckbox", enableCategoriesFrame)
@@ -2331,13 +2611,13 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
         enableCategoriesCheckbox:Click()
     end)
 
-    index = index + 1
+    currentYOffset = currentYOffset - lineHeight
 
     -- Show Use Button Checkbox
     local showUseButtonFrame = CreateFrame("Frame", "ConsumesManager_ShowUseButtonFrame", scrollChild)
     showUseButtonFrame:SetWidth(WindowWidth - 10)
     showUseButtonFrame:SetHeight(18)
-    showUseButtonFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight)
+    showUseButtonFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
     showUseButtonFrame:EnableMouse(true)
 
     local showUseButtonCheckbox = CreateFrame("CheckButton", "ConsumesManager_ShowUseButtonCheckbox", showUseButtonFrame)
@@ -2368,22 +2648,20 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
         showUseButtonCheckbox:Click()
     end)
 
-    index = index + 1
+    currentYOffset = currentYOffset - lineHeight - 20
 
     -- Multi-Account Setup
     local multiAccountTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    multiAccountTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 20)
+    multiAccountTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
     multiAccountTitle:SetText("Multi-Account Setup |cffff0000(BETA!)|r")
     multiAccountTitle:SetTextColor(1, 1, 1)
-
-    index = index + 1
+    currentYOffset = currentYOffset - lineHeight
 
     local multiAccountInfo = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    multiAccountInfo:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 20)
+    multiAccountInfo:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
     multiAccountInfo:SetText("Set a unique channel name and password. \nRepeat this setup for each of your alt-accounts.")
     multiAccountInfo:SetJustifyH("LEFT")
-
-    index = index + 2
+    currentYOffset = currentYOffset - lineHeight * 2
 
     -- More Info Button
     local popup = MultiAccountInfoPopup()
@@ -2391,7 +2669,7 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
     MoreInfoBtn:SetWidth(70)
     MoreInfoBtn:SetHeight(20)
     MoreInfoBtn:SetText("More Info")
-    MoreInfoBtn:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 10)
+    MoreInfoBtn:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
     MoreInfoBtn:SetScript("OnClick", function()
         if popup:IsShown() then
             popup:Hide()
@@ -2399,12 +2677,11 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
             popup:Show()
         end
     end)
-
-    index = index + 1
+    currentYOffset = currentYOffset - lineHeight - 10
 
     -- Channel Input
     local channelLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    channelLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 20)
+    channelLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
     channelLabel:SetText("Channel:")
     channelLabel:SetWidth(60)
     channelLabel:SetJustifyH("LEFT")
@@ -2446,12 +2723,11 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
         stored_channel = DecodeMessage(ConsumesManager_Options.Channel)
     end
     channelEditBox:SetText(stored_channel)
-
-    index = index + 1
+    currentYOffset = currentYOffset - lineHeight
 
     -- Password Input
     local passwordLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    passwordLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 20)
+    passwordLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
     passwordLabel:SetText("Password:")
     passwordLabel:SetWidth(60)
     passwordLabel:SetJustifyH("LEFT")
@@ -2491,21 +2767,20 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
         stored_password = DecodeMessage(ConsumesManager_Options.Password)
     end
     passwordEditBox:SetText(stored_password)
-
-    index = index + 1
+    currentYOffset = currentYOffset - lineHeight - 10
 
     -- Join and Leave Channel Buttons
     joinChannelButton = CreateFrame("Button", "ConsumesManager_JoinChannelButton", scrollChild, "UIPanelButtonTemplate")
     joinChannelButton:SetWidth(140)
     joinChannelButton:SetHeight(24)
     joinChannelButton:SetText("Save & Join Channel")
-    joinChannelButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 25)
+    joinChannelButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
 
     LeaveChannelButton = CreateFrame("Button", "ConsumesManager_LeaveChannelButton", scrollChild, "UIPanelButtonTemplate")
     LeaveChannelButton:SetWidth(140)
     LeaveChannelButton:SetHeight(24)
     LeaveChannelButton:SetText("Leave Channel")
-    LeaveChannelButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 140, startYOffset - index * lineHeight - 25)
+    LeaveChannelButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 140, currentYOffset)
 
     -- Function to Update Leave Button State
     local function UpdateLeaveButtonState()
@@ -2535,7 +2810,6 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
             ConsumesManager_Options.Password = nil
             UpdateLeaveButtonState()
             updateSenDataButtonState()
-            --channelErrorMessage:Hide()
         end
     end)
 
@@ -2545,6 +2819,7 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
     channelErrorMessage:SetTextColor(1, 0, 0)
     channelErrorMessage:SetText("Failed to join channel. Read chat for more info.")
     channelErrorMessage:Hide()
+    currentYOffset = currentYOffset - lineHeight - 30
 
     -- Function to Update Join Button State
     local function UpdateJoinButtonState()
@@ -2575,22 +2850,19 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
         channelErrorMessage:SetText(error_message)
     end
 
-    index = index + 3
-
     -- Danger Zone Title
     local DangerZonTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    DangerZonTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 30)
+    DangerZonTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
     DangerZonTitle:SetText("Danger Zone")
     DangerZonTitle:SetTextColor(1, 1, 1)
-
-    index = index + 2
+    currentYOffset = currentYOffset - lineHeight * 2
 
     -- Reset Addon Button
     resetButton = CreateFrame("Button", "ConsumesManager_ResetButton", scrollChild, "UIPanelButtonTemplate")
     resetButton:SetWidth(120)
     resetButton:SetHeight(24)
     resetButton:SetText("Reset Addon")
-    resetButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, startYOffset - index * lineHeight - 10)
+    resetButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, currentYOffset)
     resetButton:SetScript("OnClick", function()
         if ConsumesManager_Options.Channel then 
             local decoded_channel = DecodeMessage(ConsumesManager_Options.Channel)
@@ -2602,7 +2874,8 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
         ReloadUI()
     end)
 
-    scrollChild.contentHeight = math.abs(startYOffset) + index * lineHeight + 100
+    -- Set the scroll child height to accommodate all content
+    scrollChild.contentHeight = math.abs(startYOffset - currentYOffset) + 100
     scrollChild:SetHeight(scrollChild.contentHeight)
 
     -- Scroll Bar Setup
@@ -2625,7 +2898,6 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
     parentFrame.scrollBar = scrollBar
 
     ConsumesManager_UpdateSettingsScrollBar()
-
 
     if not ConsumesManager_ChannelFrame then
         ConsumesManager_ChannelFrame = CreateFrame("Frame", "ConsumesManager_ChannelFrame")
@@ -2650,13 +2922,13 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
 
             if noticeType == "WRONG_PASSWORD" and channelName == inputChannelName then
                 channelmsg = "WRONG_PASSWORD"
-                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+                --DEFAULT_CHAT_FRAME:AddMessage(noticeType)
             elseif noticeType == "NOT_MODERATOR" and channelName == inputChannelName then
                 channelmsg = "NOT_MODERATOR"
-                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+                --DEFAULT_CHAT_FRAME:AddMessage(noticeType)
             elseif noticeType == "YOU_JOINED" and channelName == inputChannelName then
                 channelmsg = "YOU_JOINED"
-                DEFAULT_CHAT_FRAME:AddMessage(noticeType)
+                --DEFAULT_CHAT_FRAME:AddMessage(noticeType)
             end
 
         end)
@@ -2978,23 +3250,29 @@ end
 function ConsumesManager_GetConsumableCount(itemID)
     local totalCount = 0
     local realmName = GetRealmName()
-    local faction = UnitFactionGroup("player")
-    local data = ConsumesManager_Data[realmName] and ConsumesManager_Data[realmName][faction]
-    if not data then return 0 end
 
-    for character, charData in pairs(data) do
-        if ConsumesManager_Options["Characters"] and ConsumesManager_Options["Characters"][character] then
-            if charData["inventory"] and charData["inventory"][itemID] then
-                totalCount = totalCount + charData["inventory"][itemID]
-            end
-            if charData["bank"] and charData["bank"][itemID] then
-                totalCount = totalCount + charData["bank"][itemID]
-            end
-            if charData["mail"] and charData["mail"][itemID] then
-                totalCount = totalCount + charData["mail"][itemID]
+    -- Early exit if no data
+    if not ConsumesManager_Data[realmName] then 
+        return 0 
+    end
+
+    -- Loop through all characters regardless of faction
+    for character, charData in pairs(ConsumesManager_Data[realmName]) do
+        if type(charData) == "table" and ConsumesManager_Options["Characters"] and ConsumesManager_Options["Characters"][character] == true then
+            if character ~= "faction" then  -- Skip non-character metadata
+                if charData["inventory"] and charData["inventory"][itemID] then
+                    totalCount = totalCount + charData["inventory"][itemID]
+                end
+                if charData["bank"] and charData["bank"][itemID] then
+                    totalCount = totalCount + charData["bank"][itemID]
+                end
+                if charData["mail"] and charData["mail"][itemID] then
+                    totalCount = totalCount + charData["mail"][itemID]
+                end
             end
         end
     end
+    
     return totalCount
 end
 
@@ -3042,24 +3320,21 @@ end
 
 function ConsumesManager_CheckBankAndMailScanned()
     local realmName = GetRealmName()
-    local faction = UnitFactionGroup("player")
     local playerName = UnitName("player")
 
     -- Ensure data structure exists
-    if not ConsumesManager_Data[realmName] or not ConsumesManager_Data[realmName][faction] then
+    if not ConsumesManager_Data[realmName] or not ConsumesManager_Data[realmName][playerName] then
         return false, false
     end
-    local data = ConsumesManager_Data[realmName][faction]
-    local currentCharData = data[playerName]
-    if not currentCharData then
-        return false, false
-    end
-
+    
+    local currentCharData = ConsumesManager_Data[realmName][playerName]
+    
     local bankScanned = currentCharData["bank"] ~= nil
     local mailScanned = currentCharData["mail"] ~= nil
 
     return bankScanned, mailScanned
 end
+
 
 function ConsumesManager_UpdateTabStates()
     if not ConsumesManager_Tabs or not ConsumesManager_Tabs[2] or not ConsumesManager_Tabs[3] then
@@ -3203,7 +3478,6 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
     local itemName = consumablesList[itemID] or "Unknown Item"
     local itemTexture = consumablesTexture[itemID] or "Interface\\Icons\\INV_Misc_QuestionMark"
    
-
     -- Set icon and title
     tooltipFrame.icon:SetTexture(itemTexture)
     tooltipFrame.title:SetText(itemName)
@@ -3222,7 +3496,7 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
                 divider = ""
             end
 
-            matsText =   matsText .. divider .. "|cff4ac9ff" .. mat .. "|r" 
+            matsText = matsText .. divider .. "|cff4ac9ff" .. mat .. "|r" 
         end
     else
         matsText = "|cff696969No materials specified for this item.|r"
@@ -3230,21 +3504,14 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
 
     tooltipFrame.mats:SetText(matsText)
 
-  
-
     -- Prepare content text
     local contentText = ""
-    local matsText = ""
-
     local realmName = GetRealmName()
-    local faction = UnitFactionGroup("player")
     local playerName = UnitName("player")
+    local playerFaction = UnitFactionGroup("player")
 
     -- Ensure data structure exists
     ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
-    ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
-
-    local data = ConsumesManager_Data[realmName][faction]
 
     -- Initialize totals
     local totalInventory, totalBank, totalMail = 0, 0, 0
@@ -3255,8 +3522,11 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
     ConsumesManager_Options["Characters"] = ConsumesManager_Options["Characters"] or {}
 
     -- Collect data for each character
-    for character, charData in pairs(data) do
-        if ConsumesManager_Options["Characters"][character] == true then
+    for character, charData in pairs(ConsumesManager_Data[realmName]) do
+        -- Make sure it's a character data table and not metadata
+        if type(charData) == "table" and ConsumesManager_Options["Characters"][character] == true then
+            -- Get faction info for display
+            local charFaction = charData.faction or "Unknown"
             local inventory = charData["inventory"] and charData["inventory"][itemID] or 0
             local bank = charData["bank"] and charData["bank"][itemID] or 0
             local mail = charData["mail"] and charData["mail"][itemID] or 0
@@ -3270,6 +3540,7 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
 
                 table.insert(characterList, {
                     name = character,
+                    faction = charFaction,
                     inventory = inventory,
                     bank = bank,
                     mail = mail,
@@ -3304,8 +3575,19 @@ function ConsumesManager_ShowConsumableTooltip(itemID)
 
         -- Display data for each character
         for _, charInfo in ipairs(characterList) do
-            local nameColor = charInfo.isPlayer and "|cff00ff00" or "|cffffffff"  -- Green for player, grey for others
-            contentText = contentText .. nameColor .. charInfo.name .. " (" .. charInfo.total .. ")|r\n"
+            local nameColor = charInfo.isPlayer and "|cff00ff00" or "|cffffffff"  -- Green for player, white for others
+            local factionColor = ""
+            
+            -- Color code by faction
+            if charInfo.faction == "Alliance" then
+                factionColor = "|cff0078ff"  -- Blue for Alliance
+            elseif charInfo.faction == "Horde" then
+                factionColor = "|cffb30000"  -- Red for Horde
+            else
+                factionColor = "|cff808080"  -- Grey for unknown
+            end
+            
+            contentText = contentText .. nameColor .. charInfo.name .. factionColor .. " [" .. charInfo.faction .. "]|r (" .. charInfo.total .. ")\n"
 
             local detailText = ""
             if charInfo.inventory > 0 then
@@ -3473,12 +3755,22 @@ function ConsumesManager_ScanPlayerInventory()
             local realmName = GetRealmName()
             local faction = UnitFactionGroup("player")
 
+            -- Initialize data structure without faction separation
             ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
-            ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
-            ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
-            local data = ConsumesManager_Data[realmName][faction][playerName]
-            data["inventory"] = {}
+            
+            -- Store faction information with player data for display purposes
+            if not ConsumesManager_Data[realmName][playerName] then
+                ConsumesManager_Data[realmName][playerName] = {
+                    faction = faction  -- Store faction information with the character
+                }
+            else
+                ConsumesManager_Data[realmName][playerName].faction = faction
+            end
+            
+            -- Initialize inventory data
+            ConsumesManager_Data[realmName][playerName]["inventory"] = {}
 
+            -- Scan bags
             for bag = 0, 4 do
                 local numSlots = GetContainerNumSlots(bag)
                 if numSlots then
@@ -3492,7 +3784,7 @@ function ConsumesManager_ScanPlayerInventory()
                                     local _, itemCount = GetContainerItemInfo(bag, slot)
                                     if itemCount and itemCount ~= 0 then
                                         if itemCount < 0 then itemCount = -itemCount end
-                                        data["inventory"][itemID] = (data["inventory"][itemID] or 0) + itemCount
+                                        ConsumesManager_Data[realmName][playerName]["inventory"][itemID] = (ConsumesManager_Data[realmName][playerName]["inventory"][itemID] or 0) + itemCount
                                     end
                                 end
                             end
@@ -3522,13 +3814,20 @@ function ConsumesManager_ScanPlayerBank()
             local realmName = GetRealmName()
             local faction = UnitFactionGroup("player")
 
+            -- Initialize data structure without faction separation
             ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
-            ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
-            ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
-            local data = ConsumesManager_Data[realmName][faction][playerName]
+            
+            -- Update faction information (in case it changed or was missing)
+            if not ConsumesManager_Data[realmName][playerName] then
+                ConsumesManager_Data[realmName][playerName] = {
+                    faction = faction
+                }
+            else
+                ConsumesManager_Data[realmName][playerName].faction = faction
+            end
             
             -- Initialize bank data if it doesn't exist yet
-            data["bank"] = data["bank"] or {}
+            ConsumesManager_Data[realmName][playerName]["bank"] = ConsumesManager_Data[realmName][playerName]["bank"] or {}
             
             -- Create a temporary table to track what we find
             local tempBankData = {}
@@ -3559,7 +3858,7 @@ function ConsumesManager_ScanPlayerBank()
 
             -- Update only the items we found, preserve existing data for items we didn't scan
             for itemID, count in pairs(tempBankData) do
-                data["bank"][itemID] = count
+                ConsumesManager_Data[realmName][playerName]["bank"][itemID] = count
             end
 
             ConsumesManager_UpdateManagerContent()
@@ -3570,7 +3869,6 @@ function ConsumesManager_ScanPlayerBank()
 end
 
 function ConsumesManager_ScanPlayerMail()
-
     if not isMailOpen then return end
 
     local delayFrameMail = CreateFrame("Frame")
@@ -3583,11 +3881,20 @@ function ConsumesManager_ScanPlayerMail()
             local realmName = GetRealmName()
             local faction = UnitFactionGroup("player")
 
+            -- Initialize data structure without faction separation
             ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
-            ConsumesManager_Data[realmName][faction] = ConsumesManager_Data[realmName][faction] or {}
-            ConsumesManager_Data[realmName][faction][playerName] = ConsumesManager_Data[realmName][faction][playerName] or {}
-            local data = ConsumesManager_Data[realmName][faction][playerName]
-            data["mail"] = {}
+            
+            -- Update faction information
+            if not ConsumesManager_Data[realmName][playerName] then
+                ConsumesManager_Data[realmName][playerName] = {
+                    faction = faction
+                }
+            else
+                ConsumesManager_Data[realmName][playerName].faction = faction
+            end
+            
+            -- Initialize mail data
+            ConsumesManager_Data[realmName][playerName]["mail"] = {}
 
             local numInboxItems = GetInboxNumItems()
             if numInboxItems and numInboxItems > 0 then
@@ -3596,7 +3903,7 @@ function ConsumesManager_ScanPlayerMail()
                     if itemName and itemCount and itemCount > 0 then
                         local itemID = consumablesNameToID[itemName]
                         if itemID and consumablesList[itemID] then
-                            data["mail"][itemID] = (data["mail"][itemID] or 0) + itemCount
+                            ConsumesManager_Data[realmName][playerName]["mail"][itemID] = (ConsumesManager_Data[realmName][playerName]["mail"][itemID] or 0) + itemCount
                         end
                     end
                 end
@@ -3608,7 +3915,6 @@ function ConsumesManager_ScanPlayerMail()
         end
     end)
 end
-
 
 
 
@@ -3700,8 +4006,7 @@ end
         end
 
         local realmName = GetRealmName()
-        local faction = UnitFactionGroup("player")
-        local dataTable = ConsumesManager_Data[realmName][faction]
+        local dataTable = ConsumesManager_Data[realmName]  -- Send all data, not just current faction
         local serialized = Converter:TableToString(dataTable)
         local compressed = lzw:compress(serialized)
         local data = EncodeMessage(compressed)
@@ -3817,6 +4122,7 @@ end
 
         sendFrame:Show()
     end
+
 
 -- READ DATA
 
@@ -3961,19 +4267,21 @@ end
     function combineVariableTables(compressed_message)
         local receivedTable = {}
         local realmName = GetRealmName()
-        local faction = UnitFactionGroup("player")
 
         local decoded = DecodeMessage(compressed_message)
         local uncompressed = lzw:decompress(decoded)
         receivedTable = Converter:StringToTable(uncompressed)
 
-        local existingTable = ConsumesManager_Data[realmName][faction]
-
+        -- Initialize if needed
+        ConsumesManager_Data[realmName] = ConsumesManager_Data[realmName] or {}
+        
         -- Auto-select new characters
         ConsumesManager_Options["Characters"] = ConsumesManager_Options["Characters"] or {}
-        for characterName, _ in pairs(receivedTable) do
-            if ConsumesManager_Options["Characters"][characterName] == nil then
-                ConsumesManager_Options["Characters"][characterName] = true
+        for characterName, charData in pairs(receivedTable) do
+            if type(charData) == "table" and characterName ~= "faction" then
+                if ConsumesManager_Options["Characters"][characterName] == nil then
+                    ConsumesManager_Options["Characters"][characterName] = true
+                end
             end
         end
 
@@ -3987,7 +4295,7 @@ end
             end
         end
 
-        mergeTables(existingTable, receivedTable)
+        mergeTables(ConsumesManager_Data[realmName], receivedTable)
         ConsumesManager_UpdateAllContent()
     end
 
