@@ -101,7 +101,7 @@
                 -- Your existing code...
                 
                 -- Add this line to check for version updates
-                ConsumesManager_CheckVersionUpdate()
+                -- ConsumesManager_CheckVersionUpdate()
                 
                 -- Continue with your existing code...
             end
