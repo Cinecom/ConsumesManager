@@ -101,7 +101,8 @@ consumablesCategories = {
         { id = 21217, name = "Sagefish Delight", mats = {"1x Raw Greater Sagefish", "1x Hot Spices"}, texture = "Interface\\Icons\\inv_misc_fish_21", description = "Gain 6 mana every 5 seconds for 15 minutes." },
         { id = 18045, name = "Tender Wolf Steak", mats = {"1x Tender Wolf Meat", "1x Soothing Spices"}, texture = "Interface\\Icons\\inv_misc_food_47", description = "Gain 12 stamina and spirit for 15 minutes." },
         { id = 53015, name = "Gurubashi Gumbo", mats = {"1x Tender Crocolisk Meat","1x Tiger Meat","2x Mystery Meat","1x Hot Spices","1x Soothing Spices","1x Refreshing Spring Water"}, texture = "Interface\\Icons\\inv_drink_17", description = "Gain 10 stamina and 1% reduced chance to be criticall hit for 15 minutes." },
-        { id = 84040, name = "Le Fishe Au Chocolat", mats = {"1x Raw Whitescale Salmon","1x Soothing Spices","1x Premium Chocolate","1x Golden Sansam"}, texture = "Interface\\Icons\\INV_Misc_Fishe_Au_Chocolate", description = "Gain 1% dodge and 4 defense for 15 minutes." }
+        { id = 84040, name = "Le Fishe Au Chocolat", mats = {"1x Raw Whitescale Salmon","1x Soothing Spices","1x Premium Chocolate","1x Golden Sansam"}, texture = "Interface\\Icons\\INV_Misc_Fishe_Au_Chocolate", description = "Gain 1% dodge and 4 defense for 15 minutes." },
+        { id = 83309, name = "Empowering Herbal Salad", mats = {"1x Sungrass","1x Savage Frond","3x Sweet Mountain Berry","1x Blackmouth Oil"}, texture = "Interface\\Icons\\INV_Misc_Food_Salad", description = "Gain 24 Healing Bonus for 15 minutes." }
     },
     ["Alcohol"] = {
         { id = 18269, name = "Gordok Green Grog", mats = {"Bought from Stomper Kreeg after a Dire Maul Tribute run"}, texture = "Interface\\Icons\\INV_Drink_03", description = "Increases Stamina by 10 for 15 minutes." },
