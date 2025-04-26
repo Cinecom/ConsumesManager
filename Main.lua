@@ -3827,7 +3827,7 @@ function ConsumesManager_ScanPlayerBank()
             end
             
             -- Initialize bank data if it doesn't exist yet
-            ConsumesManager_Data[realmName][playerName]["bank"] = ConsumesManager_Data[realmName][playerName]["bank"] or {}
+            ConsumesManager_Data[realmName][playerName]["bank"] = {}
             
             -- Create a temporary table to track what we find
             local tempBankData = {}
