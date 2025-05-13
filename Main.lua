@@ -4285,17 +4285,43 @@ end
             end
         end
 
-        local function mergeTables(original, newData)
-            for key, value in newData do
-                if type(value) == "table" and type(original[key]) == "table" then
-                    mergeTables(original[key], value)
-                else
-                    original[key] = value
+        -- Replace character data completely instead of merging
+        for characterName, charData in pairs(receivedTable) do
+            if type(charData) == "table" then
+                -- Create a new table for this character
+                ConsumesManager_Data[realmName][characterName] = {}
+                
+                -- Copy faction data
+                if charData.faction then
+                    ConsumesManager_Data[realmName][characterName].faction = charData.faction
+                end
+                
+                -- Copy inventory data
+                if type(charData.inventory) == "table" then
+                    ConsumesManager_Data[realmName][characterName].inventory = {}
+                    for itemID, count in pairs(charData.inventory) do
+                        ConsumesManager_Data[realmName][characterName].inventory[itemID] = count
+                    end
+                end
+                
+                -- Copy bank data
+                if type(charData.bank) == "table" then
+                    ConsumesManager_Data[realmName][characterName].bank = {}
+                    for itemID, count in pairs(charData.bank) do
+                        ConsumesManager_Data[realmName][characterName].bank[itemID] = count
+                    end
+                end
+                
+                -- Copy mail data
+                if type(charData.mail) == "table" then
+                    ConsumesManager_Data[realmName][characterName].mail = {}
+                    for itemID, count in pairs(charData.mail) do
+                        ConsumesManager_Data[realmName][characterName].mail[itemID] = count
+                    end
                 end
             end
         end
-
-        mergeTables(ConsumesManager_Data[realmName], receivedTable)
+        
         ConsumesManager_UpdateAllContent()
     end
 
