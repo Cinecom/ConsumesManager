@@ -990,7 +990,7 @@ function ConsumesManager_UpdateManagerContent()
                         label:SetTextColor(1, 0, 0)  -- Red
                     elseif totalCount < 10 then
                         label:SetTextColor(1, 0.4, 0)  -- Orange
-                    elseif totalCount <= 20 then
+                    elseif totalCount <= 19 then
                         label:SetTextColor(1, 0.85, 0)  -- Yellow
                     else
                         label:SetTextColor(0, 1, 0)  -- Green
