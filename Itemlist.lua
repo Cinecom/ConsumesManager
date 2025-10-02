@@ -21,9 +21,9 @@ consumablesCategories = {
     },
     ["Flasks"] = {
         { id = 13513, name = "Flask of Chromatic Resistance", mats = {"30x Icecap", "10x Mountain Silversage", "1x Black Lotus", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_48", description = "Increases your resistance to all schools of magic by 25 for 2 hours." },
-        { id = 13511, name = "Flask of Distilled Wisdom", mats = {"30x Dreamfoil", "10x Icecap", "1x Black Lotus", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_97", description = "Increases the player's maximum mana by 2000 for 2 hours." },
+        { id = 13511, name = "Flask of Distilled Wisdom", mats = {"30x Sungrass", "10x Icecap", "1x Black Lotus", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_97", description = "Increases the player's maximum mana by 2000 for 2 hours." },
         { id = 13512, name = "Flask of Supreme Power", mats = {"30x Dreamfoil", "10x Mountain Silversage", "1x Black Lotus", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_41", description = "Increases damage done by magical spells and effects by up to 150 for 2 hours." },
-        { id = 13510, name = "Flask of the Titans", mats = {"30x Gromsblood", "10x Stonescale Oil", "1x Black Lotus", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_62", description = "Increases the player's maximum health by 1200 for 2 hours." },
+        { id = 13510, name = "Flask of the Titans", mats = {"30x Golden Sansam", "10x Stonescale Oil", "1x Black Lotus", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_62", description = "Increases the player's maximum health by 1200 for 2 hours." },
         { id = 13506, name = "Flask of Petrification", mats = {"30x Stonescale Oil", "10x Mountain Silversage", "1x Black Lotus", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_26", description = "You turn to stone, protecting you from all physical attacks and spells for 60 sec." }
     },
     ["Protection Potions"] = {
