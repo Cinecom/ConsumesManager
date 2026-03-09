@@ -18,6 +18,7 @@ consumablesCategories = {
         { id = 9264, name = "Elixir of Shadow Power", mats = {"3x Ghost Mushroom", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_46", description = "Increases spell shadow damage by up to 40 for 30 minutes." },
         { id = 61224, name = "Dreamshard Elixir", mats = {"1x Dream Dust", "1x Small Dream Shard", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_12", description = "Grants 2% spell critical and 15 spell power for 1 hour." },
         { id = 9224, name = "Elixir of Demonslaying", mats = {"1x Gromsblood", "1x Ghost Mushroom", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_27", description = "Increases attack power by 265 against demons for 5 min." },
+        { id = 55048, name = "Elixir of Greater Arcane Power", mats = {"3x Purple Lotus", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_32", description = "Increases arcane spell damage by up to 40 for 1 hour." },
     },
     ["Flasks"] = {
         { id = 13513, name = "Flask of Chromatic Resistance", mats = {"30x Icecap", "10x Mountain Silversage", "1x Black Lotus", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_48", description = "Increases your resistance to all schools of magic by 25 for 2 hours." },

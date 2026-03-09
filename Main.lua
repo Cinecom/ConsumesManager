@@ -44,6 +44,9 @@
     if not ConsumesManager_Data then
         ConsumesManager_Data = {}
     end
+    if not ConsumesManager_Presets then
+        ConsumesManager_Presets = {}
+    end
 
 -- Event frame for updating data ------------------------------------------------------------------------
     local ConsumesManager_EventFrame = CreateFrame("Frame")
@@ -81,7 +84,8 @@
             -- Check if we've already shown the popup for this version
             if not ConsumesManager_Options.LastVersionReset or ConsumesManager_Options.LastVersionReset ~= GetAddOnMetadata("ConsumesManager", "Version") then
                 -- Show the popup with a slight delay to ensure UI is loaded
-                local delayFrame = CreateFrame("Frame")
+                local delayFrame = ConsumesManager_EventFrame.delayVersionCheck or CreateFrame("Frame")
+                ConsumesManager_EventFrame.delayVersionCheck = delayFrame
                 delayFrame:SetScript("OnUpdate", function()
                     local elapsed = 0
                     elapsed = elapsed + arg1
@@ -122,16 +126,17 @@
                 ReadData("stop")
             end
 
-            local delayFrame = CreateFrame("Frame")
+            local delayFrameLogin = ConsumesManager_EventFrame.delayFrameLogin or CreateFrame("Frame")
+            ConsumesManager_EventFrame.delayFrameLogin = delayFrameLogin
             local elapsed = 0
             local delay = 1
 
-            delayFrame:SetScript("OnUpdate", function()
+            delayFrameLogin:SetScript("OnUpdate", function()
                 elapsed = elapsed + arg1 -- arg1 provides the time since the last frame
                 if elapsed >= delay then
                     DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00" .. GetAddOnMetadata("ConsumesManager", "Title") .. "|r |cffaaaaaa(v" .. GetAddOnMetadata("ConsumesManager", "Version") .. ")|r |cffffffffLoaded!|r")
                     DEFAULT_CHAT_FRAME:AddMessage(MultiAccountChannelAnnounce)
-                    delayFrame:SetScript("OnUpdate", nil) -- Stop the OnUpdate script
+                    delayFrameLogin:SetScript("OnUpdate", nil) -- Stop the OnUpdate script
                 end
             end)
 
@@ -595,7 +600,7 @@ function ConsumesManager_ShowMainWindow()
     ConsumesManager_UpdateManagerContent()
     
     -- Update the Presets content
-    ConsumesManager_UpdatePresetsConsumables()
+    ConsumesManager_UpdatePresetsContent()
     
     -- Update Settings content
     ConsumesManager_UpdateSettingsContent()
@@ -860,6 +865,14 @@ function ConsumesManager_CreateManagerContent(parentFrame)
     scrollChild.contentHeight = (index - 1) * lineHeight
     scrollChild:SetHeight(scrollChild.contentHeight)
 
+    -- Warning label for incomplete scans (subtle top bar)
+    local warningLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    warningLabel:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 2, -33)
+    warningLabel:SetWidth(WindowWidth - 50)
+    warningLabel:SetJustifyH("LEFT")
+    warningLabel:Hide()
+    parentFrame.warningLabel = warningLabel
+
     -- Message Label (adjusted to be a child of parentFrame)
     local messageLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     messageLabel:SetText("|cffff0000No consumables selected|r\n\n|cffffffffClick on |rItems|cffffffff to get started|r")
@@ -935,15 +948,17 @@ function ConsumesManager_UpdateManagerContent()
     local bankScanned = currentCharData and currentCharData["bank"] ~= nil
     local mailScanned = currentCharData and currentCharData["mail"] ~= nil
 
-    if not bankScanned or not mailScanned then
-        -- Show message
-        ManagerFrame.messageLabel:SetText("|cffff0000This character is not scanned yet|r\n\n|cffffffffOpen your |rBank|cffffffff and |rMail|cffffffff to get started|r")
-        ManagerFrame.messageLabel:Show()
-
-        -- Update the Manager scrollbar
-        ConsumesManager_UpdateManagerScrollBar()
-
-        return
+    if not bankScanned and not mailScanned then
+        ManagerFrame.warningLabel:SetText("|cffffff00Open your Bank and Mail for complete counts.|r")
+        ManagerFrame.warningLabel:Show()
+    elseif not bankScanned then
+        ManagerFrame.warningLabel:SetText("|cffffff00Open your Bank to include bank counts.|r")
+        ManagerFrame.warningLabel:Show()
+    elseif not mailScanned then
+        ManagerFrame.warningLabel:SetText("|cffffff00Open your Mail to include mail counts.|r")
+        ManagerFrame.warningLabel:Show()
+    else
+        ManagerFrame.warningLabel:Hide()
     end
 
     -- Proceed with normal content update
@@ -1528,167 +1543,114 @@ end
 
 
 
+
 -- Presets Window -----------------------------------------------------------------------------------
 
-    local classColors = {
-        ["Rogue"] = "fff569",
-        ["Mage"] = "69ccf0",
-        ["Warrior"] = "c79c6e",
-        ["Hunter"] = "abd473",
-        ["Druid"] = "ff7d0a",
-        ["Priest"] = "ffffff",
-        ["Warlock"] = "9482c9",
-        ["Shaman"] = "0070dd",
-        ["Paladin"] = "f58cba"
-    }
-
-    -- Manually ordered raids (adjust as needed)
-    local orderedRaids = {
-        "Molten Core",
-        "Blackwing Lair",
-        "Emerald Sanctum",
-        "Temple of Ahn'Qiraj",
-        "Naxxramas",
-        "The Tower of Karazhan"
-    }
-
-    local function GetLastWord(str)
-        local spacePos = 0
-        while true do
-            local found = string.find(str, " ", spacePos + 1)
-            if found then
-                spacePos = found
-            else
-                break
-            end
-        end
-        if spacePos == 0 then
-            return str
-        else
-            return string.sub(str, spacePos + 1)
-        end
-    end
-
-    local function SortClassesByLastWord(t)
-        local n = table.getn(t)
-        local i = 1
-        while i < n do
-            local j = i + 1
-            while j <= n do
-                local lwA = GetLastWord(t[i])
-                local lwB = GetLastWord(t[j])
-                if lwA > lwB then
-                    t[i], t[j] = t[j], t[i]
-                end
-                j = j + 1
-            end
-            i = i + 1
-        end
-    end
+local ConsumesManager_PresetFrameCounter = 0
 
 function ConsumesManager_CreatePresetsContent(parentFrame)
-    local lineHeight = 18
+    -- "Save Current Layout" title
+    local saveTitle = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    saveTitle:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", 0, 0)
+    saveTitle:SetText("Save Current Layout")
+    saveTitle:SetTextColor(1, 0.82, 0)
 
-    local raidDropdown = CreateFrame("Frame", "ConsumesManager_PresetsRaidDropdown", parentFrame, "UIDropDownMenuTemplate")
-    raidDropdown:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", -20, 0)
-    UIDropDownMenu_SetWidth(120, raidDropdown)
-    UIDropDownMenu_SetText("Select |cffffff00Raid|r", raidDropdown)
+    -- Name input
+    local nameInput = CreateFrame("EditBox", "ConsumesManager_PresetNameInput", parentFrame, "InputBoxTemplate")
+    nameInput:SetWidth(170)
+    nameInput:SetHeight(25)
+    nameInput:SetPoint("TOPLEFT", saveTitle, "BOTTOMLEFT", 0, -5)
+    nameInput:SetAutoFocus(false)
+    nameInput:SetMaxLetters(30)
+    nameInput:SetText("Enter preset name...")
+    nameInput:SetTextColor(0.5, 0.5, 0.5)
 
-    local raidDropdownText = getglobal("ConsumesManager_PresetsRaidDropdownText")
-    if raidDropdownText then
-        raidDropdownText:SetJustifyH("LEFT")
-    end
-
-    local classDropdown = CreateFrame("Frame", "ConsumesManager_PresetsClassDropdown", parentFrame, "UIDropDownMenuTemplate")
-    classDropdown:SetPoint("LEFT", raidDropdown, "RIGHT", -20, 0)
-    UIDropDownMenu_SetWidth(120, classDropdown)
-    UIDropDownMenu_SetText("Select |cffffff00Class|r", classDropdown)
-
-    local classDropdownText = getglobal("ConsumesManager_PresetsClassDropdownText")
-    if classDropdownText then
-        classDropdownText:SetJustifyH("LEFT")
-    end
-
-    local classes = {}
-    for className, _ in pairs(classPresets) do
-        table.insert(classes, className)
-    end
-
-    SortClassesByLastWord(classes)
-
-    UIDropDownMenu_Initialize(classDropdown, function()
-        local idx = 1
-        while classes[idx] do
-            local cName = classes[idx]
-            local cIndex = idx
-            local info = {}
-            local lastWord = GetLastWord(cName)
-            local color = classColors[lastWord] or "ffffff"
-            info.text = "|cff" .. color .. cName .. "|r"
-            info.func = function()
-                UIDropDownMenu_SetSelectedID(classDropdown, cIndex)
-                ConsumesManager_SelectedClass = cName
-                ConsumesManager_UpdateRaidsDropdown()
-                ConsumesManager_UpdatePresetsConsumables()
-            end
-            UIDropDownMenu_AddButton(info)
-            idx = idx + 1
+    nameInput:SetScript("OnEditFocusGained", function()
+        if this:GetText() == "Enter preset name..." then
+            this:SetText("")
+            this:SetTextColor(1, 1, 1)
         end
     end)
 
-    -- Build initial raid list from the first class, but we won't sort them automatically
-    -- We rely on our manual "orderedRaids" list
-    local uniqueRaids, seen = {}, {}
-    local count = 0
-    local firstClass = next(classPresets)
-    if firstClass then
-        local classList = classPresets[firstClass]
-        local i = 1
-        while classList[i] do
-            local rName = classList[i].raid
-            if not seen[rName] then
-                count = count + 1
-                uniqueRaids[count] = rName
-                seen[rName] = true
-            end
-            i = i + 1
+    nameInput:SetScript("OnEditFocusLost", function()
+        if this:GetText() == "" then
+            this:SetText("Enter preset name...")
+            this:SetTextColor(0.5, 0.5, 0.5)
         end
-    end
+    end)
 
-    UIDropDownMenu_Initialize(raidDropdown, function()
-        if count == 0 then
-            local info = {}
-            info.text = "No Raids Available"
-            info.disabled = true
-            UIDropDownMenu_AddButton(info)
-            UIDropDownMenu_SetText("Select |cffffff00Raid|r", raidDropdown)
+    -- Save logic (shared by button and enter key)
+    local function SaveCurrentPreset()
+        local name = nameInput:GetText()
+        if name == "" or name == "Enter preset name..." then
+            ConsumesManager_ShowPresetStatus("|cffff4444Please enter a preset name.|r")
             return
         end
-        local i = 1
-        while orderedRaids[i] do
-            local orName = orderedRaids[i]
-            if seen[orName] then
-                local cIndex = i
-                local cRaidName = orName
-                local info = {}
-                info.text = orName
-                info.func = function()
-                    UIDropDownMenu_SetSelectedID(raidDropdown, cIndex)
-                    ConsumesManager_SelectedRaid = cRaidName
-                    ConsumesManager_UpdatePresetsConsumables()
-                end
-                UIDropDownMenu_AddButton(info)
+
+        local itemCount = 0
+        local items = {}
+        for id, selected in pairs(ConsumesManager_SelectedItems) do
+            if selected then
+                items[id] = true
+                itemCount = itemCount + 1
             end
-            i = i + 1
         end
-        UIDropDownMenu_SetText("Select |cffffff00Raid|r", raidDropdown)
+
+        if itemCount == 0 then
+            ConsumesManager_ShowPresetStatus("|cffff4444No items selected in tracker.|r")
+            return
+        end
+
+        table.insert(ConsumesManager_Presets, {
+            name = name,
+            items = items
+        })
+
+        nameInput:SetText("Enter preset name...")
+        nameInput:SetTextColor(0.5, 0.5, 0.5)
+        nameInput:ClearFocus()
+
+        ConsumesManager_ShowPresetStatus("|cff44ff44Preset '" .. name .. "' saved! (" .. itemCount .. " items)|r")
+        ConsumesManager_UpdatePresetsContent()
+    end
+
+    -- Save button
+    local saveButton = CreateFrame("Button", "ConsumesManager_PresetSaveButton", parentFrame, "UIPanelButtonTemplate")
+    saveButton:SetWidth(100)
+    saveButton:SetHeight(25)
+    saveButton:SetPoint("LEFT", nameInput, "RIGHT", 5, 0)
+    saveButton:SetText("Save Preset")
+    saveButton:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 10, "NORMAL")
+    saveButton:SetScript("OnClick", function()
+        SaveCurrentPreset()
     end)
 
-    UIDropDownMenu_SetSelectedID(raidDropdown, 0)
+    nameInput:SetScript("OnEnterPressed", function()
+        SaveCurrentPreset()
+    end)
 
+    nameInput:SetScript("OnEscapePressed", function()
+        this:ClearFocus()
+    end)
+
+    -- Separator line
+    local separator = parentFrame:CreateTexture(nil, "ARTWORK")
+    separator:SetHeight(1)
+    separator:SetPoint("TOPLEFT", nameInput, "BOTTOMLEFT", 0, -8)
+    separator:SetPoint("RIGHT", parentFrame, "RIGHT", -5, 0)
+    separator:SetTexture("Interface\\Buttons\\WHITE8x8")
+    separator:SetVertexColor(0.4, 0.4, 0.4, 1)
+
+    -- "Your Presets" list title
+    local listTitle = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    listTitle:SetPoint("TOPLEFT", separator, "BOTTOMLEFT", 0, -6)
+    listTitle:SetText("Your Presets")
+    listTitle:SetTextColor(1, 0.82, 0)
+
+    -- Scroll frame for presets list
     local scrollFrame = CreateFrame("ScrollFrame", "ConsumesManager_PresetsScrollFrame", parentFrame)
-    scrollFrame:SetPoint("TOPLEFT", classDropdown, "BOTTOMLEFT", -135, -40)
-    scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -25, -5)
+    scrollFrame:SetPoint("TOPLEFT", listTitle, "BOTTOMLEFT", 0, -5)
+    scrollFrame:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -20, 20)
     scrollFrame:EnableMouseWheel(true)
 
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
@@ -1698,9 +1660,10 @@ function ConsumesManager_CreatePresetsContent(parentFrame)
     parentFrame.scrollChild = scrollChild
     parentFrame.scrollFrame = scrollFrame
 
+    -- Scrollbar
     local scrollBar = CreateFrame("Slider", "ConsumesManager_PresetsScrollBar", parentFrame)
-    scrollBar:SetPoint("TOPRIGHT", parentFrame, "TOPRIGHT", -2, -35)
-    scrollBar:SetPoint("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -2, 16)
+    scrollBar:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", 18, 0)
+    scrollBar:SetPoint("BOTTOMRIGHT", scrollFrame, "BOTTOMRIGHT", 18, 0)
     scrollBar:SetWidth(16)
     scrollBar:SetOrientation('VERTICAL')
     scrollBar:SetThumbTexture("Interface\\Buttons\\UI-ScrollBar-Knob")
@@ -1711,8 +1674,7 @@ function ConsumesManager_CreatePresetsContent(parentFrame)
         insets = { left = 3, right = 3, top = 3, bottom = 3 }
     })
     scrollBar:SetScript("OnValueChanged", function()
-        local val = this:GetValue()
-        parentFrame.scrollFrame:SetVerticalScroll(val)
+        parentFrame.scrollFrame:SetVerticalScroll(this:GetValue())
     end)
     parentFrame.scrollBar = scrollBar
     scrollBar:Hide()
@@ -1731,665 +1693,413 @@ function ConsumesManager_CreatePresetsContent(parentFrame)
         parentFrame.scrollBar:SetValue(new)
     end)
 
-    local orderByNameButton = CreateFrame("Button", "ConsumesManager_PresetsOrderByNameButton", parentFrame, "UIPanelButtonTemplate")
-    orderByNameButton:SetWidth(100)
-    orderByNameButton:SetHeight(24)
-    orderByNameButton:SetText("Order by Name")
-    orderByNameButton:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 10, "NORMAL")
-    orderByNameButton:SetPoint("TOPLEFT", ConsumesManager_MainFrame.tabs[3], "TOPLEFT", -4, -35)
-    orderByNameButton:SetScript("OnClick", function()
-        if ConsumesManager_Options.presetsSortOrder == "name" then
-            if ConsumesManager_Options.presetsSortDirection == "asc" then
-                ConsumesManager_Options.presetsSortDirection = "desc"
-            else
-                ConsumesManager_Options.presetsSortDirection = "asc"
-            end
-        else
-            ConsumesManager_Options.presetsSortOrder = "name"
-            ConsumesManager_Options.presetsSortDirection = "asc"
-        end
-        ConsumesManager_UpdatePresetsConsumables()
-    end)
+    -- Empty state message
+    local emptyMessage = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    emptyMessage:SetPoint("CENTER", scrollFrame, "CENTER", 0, 0)
+    emptyMessage:SetText("|cff808080No presets saved yet.\nSelect items in the Items tab, then\nsave your layout here.|r")
+    emptyMessage:SetJustifyH("CENTER")
+    parentFrame.emptyMessage = emptyMessage
 
-    local orderByAmountButton = CreateFrame("Button", "ConsumesManager_PresetsOrderByAmountButton", parentFrame, "UIPanelButtonTemplate")
-    orderByAmountButton:SetWidth(120)
-    orderByAmountButton:SetHeight(24)
-    orderByAmountButton:SetText("Order by Amount")
-    orderByAmountButton:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 10, "NORMAL")
-    orderByAmountButton:SetPoint("LEFT", orderByNameButton, "RIGHT", 10, 0)
-    orderByAmountButton:SetScript("OnClick", function()
-        if ConsumesManager_Options.presetsSortOrder == "amount" then
-            if ConsumesManager_Options.presetsSortDirection == "desc" then
-                ConsumesManager_Options.presetsSortDirection = "asc"
-            else
-                ConsumesManager_Options.presetsSortDirection = "desc"
-            end
-        else
-            ConsumesManager_Options.presetsSortOrder = "amount"
-            ConsumesManager_Options.presetsSortDirection = "desc"
-        end
-        ConsumesManager_UpdatePresetsConsumables()
-    end)
+    -- Status message for feedback
+    local statusMessage = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    statusMessage:SetPoint("BOTTOM", parentFrame, "BOTTOM", 0, 2)
+    statusMessage:SetJustifyH("CENTER")
+    statusMessage:Hide()
+    parentFrame.statusMessage = statusMessage
 
-    parentFrame.orderByNameButton = orderByNameButton
-    parentFrame.orderByAmountButton = orderByAmountButton
-    orderByNameButton:Hide()
-    orderByAmountButton:Hide()
-
-    parentFrame.presetsConsumables = {}
-    local messageLabel = parentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    messageLabel:SetText("|cffff0000Please select both a Raid and a Class.|r")
-    messageLabel:SetPoint("CENTER", parentFrame, "CENTER", 0, 0)
-    messageLabel:Hide()
-    parentFrame.messageLabel = messageLabel
+    parentFrame.presetFrames = {}
 end
 
-function ConsumesManager_UpdateRaidsDropdown()
-    local raidDropdown = getglobal("ConsumesManager_PresetsRaidDropdown")
-    if not raidDropdown then
+-- Show a temporary status message in the presets tab
+function ConsumesManager_ShowPresetStatus(text)
+    local parentFrame = ConsumesManager_MainFrame and ConsumesManager_MainFrame.tabs and ConsumesManager_MainFrame.tabs[3]
+    if not parentFrame or not parentFrame.statusMessage then return end
+
+    parentFrame.statusMessage:SetText(text)
+    parentFrame.statusMessage:Show()
+
+    if not parentFrame.statusTimer then
+        parentFrame.statusTimer = CreateFrame("Frame")
+    end
+    parentFrame.statusTimer.elapsed = 0
+    parentFrame.statusTimer:SetScript("OnUpdate", function()
+        this.elapsed = this.elapsed + arg1
+        if this.elapsed >= 3 then
+            parentFrame.statusMessage:Hide()
+            this:SetScript("OnUpdate", nil)
+        end
+    end)
+end
+
+-- Count the number of items in a preset
+function ConsumesManager_CountPresetItems(preset)
+    local count = 0
+    if preset and preset.items then
+        for _, v in pairs(preset.items) do
+            if v then count = count + 1 end
+        end
+    end
+    return count
+end
+
+-- Load a preset: replaces current item selection with preset items
+function ConsumesManager_LoadPreset(presetIndex)
+    local preset = ConsumesManager_Presets[presetIndex]
+    if not preset then return end
+
+    -- Clear current selection safely (collect keys first)
+    local keysToRemove = {}
+    for id in pairs(ConsumesManager_SelectedItems) do
+        table.insert(keysToRemove, id)
+    end
+    for i = 1, table.getn(keysToRemove) do
+        ConsumesManager_SelectedItems[keysToRemove[i]] = nil
+    end
+
+    -- Load preset items
+    for id, selected in pairs(preset.items) do
+        if selected then
+            ConsumesManager_SelectedItems[id] = true
+        end
+    end
+
+    -- Update Items tab checkboxes if available
+    local itemsTab = ConsumesManager_MainFrame and ConsumesManager_MainFrame.tabs and ConsumesManager_MainFrame.tabs[2]
+    if itemsTab and itemsTab.checkboxes then
+        for itemID, checkbox in pairs(itemsTab.checkboxes) do
+            if ConsumesManager_SelectedItems[itemID] then
+                checkbox:SetChecked(true)
+            else
+                checkbox:SetChecked(false)
+            end
+        end
+    end
+
+    -- Update tracker
+    ConsumesManager_UpdateManagerContent()
+
+    local count = ConsumesManager_CountPresetItems(preset)
+    ConsumesManager_ShowPresetStatus("|cff44ff44Preset '|r|cffffffff" .. preset.name .. "|r|cff44ff44' loaded! (" .. count .. " items)|r")
+end
+
+-- Update a preset: overwrites its items with the current selection
+function ConsumesManager_UpdatePresetItems(presetIndex)
+    local preset = ConsumesManager_Presets[presetIndex]
+    if not preset then return end
+
+    local items = {}
+    local itemCount = 0
+    for id, selected in pairs(ConsumesManager_SelectedItems) do
+        if selected then
+            items[id] = true
+            itemCount = itemCount + 1
+        end
+    end
+
+    if itemCount == 0 then
+        ConsumesManager_ShowPresetStatus("|cffff4444No items selected to save.|r")
         return
     end
-    local prevRaid = ConsumesManager_SelectedRaid
-    UIDropDownMenu_ClearAll(raidDropdown)
 
-    local uniqueRaids, seen = {}, {}
-    local c = 0
-    if ConsumesManager_SelectedClass and classPresets[ConsumesManager_SelectedClass] then
-        local clList = classPresets[ConsumesManager_SelectedClass]
-        local i = 1
-        while clList[i] do
-            local rName = clList[i].raid
-            if not seen[rName] then
-                c = c + 1
-                uniqueRaids[c] = rName
-                seen[rName] = true
-            end
-            i = i + 1
-        end
-    end
-
-    UIDropDownMenu_Initialize(raidDropdown, function()
-        if c == 0 then
-            local info = {}
-            info.text = "No Raids Available"
-            info.disabled = 1
-            UIDropDownMenu_AddButton(info)
-            UIDropDownMenu_SetText("Select |cffffff00Raid|r", raidDropdown)
-            return
-        end
-        local i = 1
-        local selectedIndex = 0
-        while orderedRaids[i] do
-            local raidName = orderedRaids[i]
-            if seen[raidName] then
-                local currentIndex = i
-                local currentRaidName = raidName
-                local info = {}
-                info.text = raidName
-                info.func = function()
-                    UIDropDownMenu_SetSelectedID(raidDropdown, currentIndex)
-                    ConsumesManager_SelectedRaid = currentRaidName
-                    ConsumesManager_UpdatePresetsConsumables()
-                end
-                UIDropDownMenu_AddButton(info)
-                if raidName == prevRaid then
-                    selectedIndex = i
-                end
-            end
-            i = i + 1
-        end
-        if selectedIndex > 0 then
-            UIDropDownMenu_SetSelectedID(raidDropdown, selectedIndex)
-        else
-            UIDropDownMenu_SetSelectedID(raidDropdown, 0)
-            UIDropDownMenu_SetText("Select |cffffff00Raid|r", raidDropdown)
-            ConsumesManager_SelectedRaid = nil
-        end
-    end)
+    preset.items = items
+    ConsumesManager_ShowPresetStatus("|cff44ff44Preset '|r|cffffffff" .. preset.name .. "|r|cff44ff44' updated! (" .. itemCount .. " items)|r")
+    ConsumesManager_UpdatePresetsContent()
 end
 
+-- Delete a preset
+function ConsumesManager_DeletePreset(presetIndex)
+    local preset = ConsumesManager_Presets[presetIndex]
+    if not preset then return end
+    local name = preset.name
+    table.remove(ConsumesManager_Presets, presetIndex)
+    ConsumesManager_ShowPresetStatus("|cffffff44Preset '|r|cffffffff" .. name .. "|r|cffffff44' deleted.|r")
+    ConsumesManager_UpdatePresetsContent()
+end
+
+-- Rename a preset
+function ConsumesManager_RenamePreset(presetIndex, newName)
+    local preset = ConsumesManager_Presets[presetIndex]
+    if not preset or not newName or newName == "" then return end
+    preset.name = newName
+    ConsumesManager_ShowPresetStatus("|cff44ff44Preset renamed to '|r|cffffffff" .. newName .. "|r|cff44ff44'.|r")
+    ConsumesManager_UpdatePresetsContent()
+end
+
+-- Build sorted item names for a preset (used in tooltip)
+function ConsumesManager_GetPresetItemNames(preset)
+    local names = {}
+    if preset and preset.items then
+        for id, selected in pairs(preset.items) do
+            if selected and consumablesList and consumablesList[id] then
+                table.insert(names, consumablesList[id])
+            end
+        end
+    end
+    table.sort(names)
+    return names
+end
+
+-- Update the presets list display
+function ConsumesManager_UpdatePresetsContent()
+    local parentFrame = ConsumesManager_MainFrame and ConsumesManager_MainFrame.tabs and ConsumesManager_MainFrame.tabs[3]
+    if not parentFrame then return end
+
+    local scrollChild = parentFrame.scrollChild
+    if not scrollChild then return end
+
+    -- Hide existing preset frames
+    if parentFrame.presetFrames then
+        for i = 1, table.getn(parentFrame.presetFrames) do
+            if parentFrame.presetFrames[i] then
+                parentFrame.presetFrames[i]:Hide()
+            end
+        end
+    end
+    parentFrame.presetFrames = {}
+
+    -- Ensure presets table exists
+    if not ConsumesManager_Presets then
+        ConsumesManager_Presets = {}
+    end
+    local presetCount = table.getn(ConsumesManager_Presets)
+
+    if presetCount == 0 then
+        if parentFrame.emptyMessage then
+            parentFrame.emptyMessage:Show()
+        end
+        if parentFrame.scrollBar then
+            parentFrame.scrollBar:Hide()
+        end
+        scrollChild:SetHeight(1)
+        return
+    end
+
+    if parentFrame.emptyMessage then
+        parentFrame.emptyMessage:Hide()
+    end
+
+    -- Build preset rows
+    local yOffset = 0
+    local rowHeight = 52
+
+    for i = 1, presetCount do
+        local preset = ConsumesManager_Presets[i]
+        local presetIndex = i
+        local itemCount = ConsumesManager_CountPresetItems(preset)
+
+        ConsumesManager_PresetFrameCounter = ConsumesManager_PresetFrameCounter + 1
+        local frameID = ConsumesManager_PresetFrameCounter
+
+        -- Container frame
+        local presetFrame = CreateFrame("Frame", "ConsumesManager_PF" .. frameID, scrollChild)
+        presetFrame:SetWidth(scrollChild:GetWidth())
+        presetFrame:SetHeight(rowHeight - 4)
+        presetFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -yOffset)
+        presetFrame:EnableMouse(true)
+        presetFrame:Show()
+
+        -- Subtle background
+        local bg = presetFrame:CreateTexture(nil, "BACKGROUND")
+        bg:SetAllPoints(presetFrame)
+        bg:SetTexture("Interface\\Buttons\\WHITE8x8")
+        bg:SetVertexColor(1, 1, 1, 0.03)
+
+        -- Preset name + item count
+        local nameLabel = presetFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        nameLabel:SetPoint("TOPLEFT", presetFrame, "TOPLEFT", 4, -2)
+        nameLabel:SetText("|cffffffff" .. preset.name .. "|r  |cff808080(" .. itemCount .. " items)|r")
+        nameLabel:SetJustifyH("LEFT")
+
+        -- Tooltip showing preset contents on hover
+        presetFrame:SetScript("OnEnter", function()
+            local names = ConsumesManager_GetPresetItemNames(preset)
+            if table.getn(names) > 0 then
+                GameTooltip:SetOwner(presetFrame, "ANCHOR_RIGHT")
+                GameTooltip:AddLine(preset.name, 1, 0.82, 0)
+                GameTooltip:AddLine(" ")
+                local maxShow = 15
+                for idx = 1, math.min(table.getn(names), maxShow) do
+                    GameTooltip:AddLine(names[idx], 1, 1, 1)
+                end
+                if table.getn(names) > maxShow then
+                    GameTooltip:AddLine("... and " .. (table.getn(names) - maxShow) .. " more", 0.5, 0.5, 0.5)
+                end
+                GameTooltip:Show()
+            end
+            bg:SetVertexColor(1, 1, 1, 0.08)
+        end)
+        presetFrame:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+            bg:SetVertexColor(1, 1, 1, 0.03)
+        end)
+
+        -- Rename edit box (hidden by default)
+        local renameBox = CreateFrame("EditBox", "ConsumesManager_RB" .. frameID, presetFrame, "InputBoxTemplate")
+        renameBox:SetWidth(150)
+        renameBox:SetHeight(20)
+        renameBox:SetPoint("TOPLEFT", presetFrame, "TOPLEFT", 0, -1)
+        renameBox:SetAutoFocus(false)
+        renameBox:SetMaxLetters(30)
+        renameBox:Hide()
+
+        renameBox:SetScript("OnEnterPressed", function()
+            local newName = this:GetText()
+            if newName and newName ~= "" then
+                ConsumesManager_RenamePreset(presetIndex, newName)
+            end
+            this:Hide()
+            nameLabel:Show()
+        end)
+
+        renameBox:SetScript("OnEscapePressed", function()
+            this:Hide()
+            nameLabel:Show()
+        end)
+
+        renameBox:SetScript("OnEditFocusLost", function()
+            if this:IsVisible() then
+                this:Hide()
+                nameLabel:Show()
+            end
+        end)
+
+        -- Action buttons row
+        local btnY = -18
+        local btnSpacing = 4
+
+        -- Load button
+        local loadBtn = CreateFrame("Button", "ConsumesManager_PLB" .. frameID, presetFrame, "UIPanelButtonTemplate")
+        loadBtn:SetWidth(55)
+        loadBtn:SetHeight(20)
+        loadBtn:SetPoint("TOPLEFT", presetFrame, "TOPLEFT", 2, btnY)
+        loadBtn:SetText("Load")
+        loadBtn:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 10, "NORMAL")
+        loadBtn:SetScript("OnClick", function()
+            ConsumesManager_LoadPreset(presetIndex)
+        end)
+
+        -- Update button (with inline confirmation)
+        local updateBtn = CreateFrame("Button", "ConsumesManager_PUB" .. frameID, presetFrame, "UIPanelButtonTemplate")
+        updateBtn:SetWidth(65)
+        updateBtn:SetHeight(20)
+        updateBtn:SetPoint("LEFT", loadBtn, "RIGHT", btnSpacing, 0)
+        updateBtn:SetText("Update")
+        updateBtn:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 10, "NORMAL")
+        updateBtn.confirming = false
+        updateBtn:SetScript("OnClick", function()
+            if updateBtn.confirming then
+                ConsumesManager_UpdatePresetItems(presetIndex)
+                updateBtn.confirming = false
+            else
+                updateBtn:SetText("|cffff4444Confirm?|r")
+                updateBtn.confirming = true
+                if not updateBtn.resetTimer then
+                    updateBtn.resetTimer = CreateFrame("Frame")
+                end
+                updateBtn.resetTimer.elapsed = 0
+                updateBtn.resetTimer:SetScript("OnUpdate", function()
+                    this.elapsed = this.elapsed + arg1
+                    if this.elapsed >= 3 then
+                        updateBtn:SetText("Update")
+                        updateBtn.confirming = false
+                        this:SetScript("OnUpdate", nil)
+                    end
+                end)
+            end
+        end)
+
+        -- Rename button
+        local renameBtn = CreateFrame("Button", "ConsumesManager_PRnB" .. frameID, presetFrame, "UIPanelButtonTemplate")
+        renameBtn:SetWidth(65)
+        renameBtn:SetHeight(20)
+        renameBtn:SetPoint("LEFT", updateBtn, "RIGHT", btnSpacing, 0)
+        renameBtn:SetText("Rename")
+        renameBtn:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 10, "NORMAL")
+        renameBtn:SetScript("OnClick", function()
+            nameLabel:Hide()
+            renameBox:SetText(preset.name)
+            renameBox:Show()
+            renameBox:SetFocus()
+            renameBox:HighlightText()
+        end)
+
+        -- Delete button (with inline confirmation)
+        local deleteBtn = CreateFrame("Button", "ConsumesManager_PDB" .. frameID, presetFrame, "UIPanelButtonTemplate")
+        deleteBtn:SetWidth(60)
+        deleteBtn:SetHeight(20)
+        deleteBtn:SetPoint("LEFT", renameBtn, "RIGHT", btnSpacing, 0)
+        deleteBtn:SetText("Delete")
+        deleteBtn:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 10, "NORMAL")
+        deleteBtn.confirming = false
+        deleteBtn:SetScript("OnClick", function()
+            if deleteBtn.confirming then
+                ConsumesManager_DeletePreset(presetIndex)
+                deleteBtn.confirming = false
+            else
+                deleteBtn:SetText("|cffff4444Sure?|r")
+                deleteBtn.confirming = true
+                if not deleteBtn.resetTimer then
+                    deleteBtn.resetTimer = CreateFrame("Frame")
+                end
+                deleteBtn.resetTimer.elapsed = 0
+                deleteBtn.resetTimer:SetScript("OnUpdate", function()
+                    this.elapsed = this.elapsed + arg1
+                    if this.elapsed >= 3 then
+                        deleteBtn:SetText("Delete")
+                        deleteBtn.confirming = false
+                        this:SetScript("OnUpdate", nil)
+                    end
+                end)
+            end
+        end)
+
+        -- Separator between presets
+        if i < presetCount then
+            local sep = presetFrame:CreateTexture(nil, "ARTWORK")
+            sep:SetHeight(1)
+            sep:SetPoint("BOTTOMLEFT", presetFrame, "BOTTOMLEFT", 0, 0)
+            sep:SetPoint("BOTTOMRIGHT", presetFrame, "BOTTOMRIGHT", 0, 0)
+            sep:SetTexture("Interface\\Buttons\\WHITE8x8")
+            sep:SetVertexColor(0.3, 0.3, 0.3, 0.5)
+        end
+
+        table.insert(parentFrame.presetFrames, presetFrame)
+        yOffset = yOffset + rowHeight
+    end
+
+    -- Update scroll child height
+    scrollChild:SetHeight(yOffset + 10)
+
+    -- Update scrollbar
+    ConsumesManager_UpdatePresetsScrollBar()
+end
 
 function ConsumesManager_UpdatePresetsScrollBar()
-    local PresetsFrame = ConsumesManager_MainFrame.tabs[3]
-    if not PresetsFrame then
-        return
-    end
+    local parentFrame = ConsumesManager_MainFrame and ConsumesManager_MainFrame.tabs and ConsumesManager_MainFrame.tabs[3]
+    if not parentFrame then return end
 
-    local scrollFrame = PresetsFrame.scrollFrame
-    local scrollChild = PresetsFrame.scrollChild
-    local scrollBar = PresetsFrame.scrollBar
+    local scrollFrame = parentFrame.scrollFrame
+    local scrollChild = parentFrame.scrollChild
+    local scrollBar = parentFrame.scrollBar
 
-    if not scrollFrame or not scrollChild or not scrollBar then
-        return
-    end
+    if not scrollFrame or not scrollChild or not scrollBar then return end
 
     local totalHeight = scrollChild:GetHeight()
-    local shownHeight = PresetsFrame:GetHeight() - 20  -- Account for padding/margins
+    local shownHeight = scrollFrame:GetHeight()
 
     if totalHeight > shownHeight then
         local maxScroll = totalHeight - shownHeight
-        scrollFrame.range = maxScroll  -- Set the scroll range
+        scrollFrame.range = maxScroll
         scrollBar:SetMinMaxValues(0, maxScroll)
         scrollBar:SetValue(math.min(scrollBar:GetValue(), maxScroll))
         scrollBar:Show()
     else
-        scrollFrame.range = 0  -- Also handle this case
+        scrollFrame.range = 0
         scrollBar:SetMinMaxValues(0, 0)
         scrollBar:SetValue(0)
         scrollBar:Hide()
     end
 end
-
-function ConsumesManager_UpdatePresetsConsumables()
-    -- References to necessary frames
-    local parentFrame = ConsumesManager_MainFrame and ConsumesManager_MainFrame.tabs and ConsumesManager_MainFrame.tabs[3]
-    if not parentFrame then
-        -- Presets tab is not initialized yet
-        return
-    end
-
-    local scrollChild = parentFrame.scrollChild
-    local scrollFrame = parentFrame.scrollFrame
-    local scrollBar = parentFrame.scrollBar
-
-    -- Initialize presetsConsumables table if not already
-    if not parentFrame.presetsConsumables then
-        parentFrame.presetsConsumables = {}
-    end
-
-    -- Function to get the number of elements in a table
-    local function GetTableLength(t)
-        local count = 0
-        if type(t) == "table" then
-            for _ in pairs(t) do
-                count = count + 1
-            end
-        end
-        return count
-    end
-
-    -- Clear existing consumables
-    local consumablesCount = GetTableLength(parentFrame.presetsConsumables)
-    for i = 1, consumablesCount do
-        local consumable = parentFrame.presetsConsumables[i]
-        if consumable and consumable.frame and consumable.frame.Hide then
-            consumable.frame:Hide()
-        end
-    end
-    parentFrame.presetsConsumables = {}
-
-    -- Hide "No items" message if it exists
-    if parentFrame.noItemsMessage then
-        parentFrame.noItemsMessage:Hide()
-    end
-
-    -- Check if both Raid and Class are selected
-    if not ConsumesManager_SelectedRaid or not ConsumesManager_SelectedClass then
-        -- Show a message prompting the user to select both
-        parentFrame.messageLabel:SetText("|cffffffffSelect both a |rRaid|cffffffff and a |rClass|cffffffff.|r")
-        parentFrame.messageLabel:Show()
-        parentFrame.orderByNameButton:Hide()
-        parentFrame.orderByAmountButton:Hide()
-        return
-    else
-        parentFrame.messageLabel:Hide()
-    end
-
-    -- Retrieve the selected preset based on Class and Raid
-    local selectedPreset = nil
-    if classPresets and classPresets[ConsumesManager_SelectedClass] and type(classPresets[ConsumesManager_SelectedClass]) == "table" then
-        local presetListLength = GetTableLength(classPresets[ConsumesManager_SelectedClass])
-        for i = 1, presetListLength do
-            local preset = classPresets[ConsumesManager_SelectedClass][i]
-            if preset and preset.raid == ConsumesManager_SelectedRaid then
-                selectedPreset = preset
-                break
-            end
-        end
-    end
-
-    -- Handle case where no preset is found
-    if not selectedPreset then
-        parentFrame.messageLabel:SetText("|cffff0000No presets found for this combination.|r")
-        parentFrame.messageLabel:Show()
-        parentFrame.orderByNameButton:Hide()
-        parentFrame.orderByAmountButton:Hide()
-        return
-    end
-
-    -- Get the consumable IDs from selectedPreset
-    local presetIDs = selectedPreset.id
-    if not presetIDs or type(presetIDs) ~= "table" then
-        parentFrame.messageLabel:SetText("|cffff0000Invalid preset data.|r")
-        parentFrame.messageLabel:Show()
-        parentFrame.orderByNameButton:Hide()
-        parentFrame.orderByAmountButton:Hide()
-        return
-    end
-
-    -- Ensure data structure exists
-    local realmName = GetRealmName()
-    local playerName = UnitName("player")
-
-    -- Populate the consumables list based on presetIDs
-    -- Initialize tables
-    local consumablesList = {}
-    local consumablesNameToID = {}
-    local consumablesTexture = {}
-    local consumablesDescription = {}
-
-    -- Populate consumablesList and other lookup tables
-    for categoryName, consumables in pairs(consumablesCategories) do
-        for _, consumable in ipairs(consumables) do
-            consumablesList[consumable.id] = consumable.name
-            consumablesNameToID[consumable.name] = consumable.id
-            consumablesTexture[consumable.id] = consumable.texture
-            consumablesDescription[consumable.id] = consumable.description
-        end
-    end
-
-    -- Create a mapping from consumable ID to category name
-    local consumablesIDToCategory = {}
-    for categoryName, consumables in pairs(consumablesCategories) do
-        for _, consumable in ipairs(consumables) do
-            consumablesIDToCategory[consumable.id] = categoryName
-        end
-    end
-
-    -- Main loop to gather consumables to show
-    local consumablesToShow = {}
-    local presetIDsLength = GetTableLength(presetIDs)
-    for i = 1, presetIDsLength do
-        local id = presetIDs[i]
-        if id and consumablesList[id] then
-            -- Calculate total count across selected characters
-            local totalCount = 0
-            if ConsumesManager_Data[realmName] and ConsumesManager_SelectedItems and ConsumesManager_Options.Characters and type(ConsumesManager_Options.Characters) == "table" then
-                for character, isSelected in pairs(ConsumesManager_Options.Characters) do
-                    if isSelected and ConsumesManager_Data[realmName][character] and type(ConsumesManager_Data[realmName][character]) == "table" then
-                        local charInventory = ConsumesManager_Data[realmName][character].inventory or {}
-                        local charBank = ConsumesManager_Data[realmName][character].bank or {}
-                        local charMail = ConsumesManager_Data[realmName][character].mail or {}
-                        totalCount = totalCount + (charInventory[id] or 0) + (charBank[id] or 0) + (charMail[id] or 0)
-                    end
-                end
-            end
-
-            -- Assign category using the mapping table
-            local category = consumablesIDToCategory[id] or "Uncategorized"
-
-            -- Insert consumable with additional data
-            table.insert(consumablesToShow, {
-                id = id,
-                name = consumablesList[id],
-                texture = consumablesTexture[id],
-                description = consumablesDescription[id],
-                totalCount = totalCount,
-                category = category
-            })
-        else
-            -- Optional: Handle the else case if needed
-        end
-    end
-
-    -- Apply sorting based on settings
-    local sortOrder = ConsumesManager_Options.presetsSortOrder or "name"
-    local sortDirection = ConsumesManager_Options.presetsSortDirection or "asc"
-
-    -- Sorting function
-    local function SortConsumables(a, b)
-        if sortOrder == "name" then
-            if sortDirection == "asc" then
-                return a.name < b.name
-            else
-                return a.name > b.name
-            end
-        elseif sortOrder == "amount" then
-            if sortDirection == "asc" then
-                return a.totalCount < b.totalCount
-            else
-                return a.totalCount > b.totalCount
-            end
-        else
-            -- Default to name ascending
-            return a.name < b.name
-        end
-    end
-
-    -- Sort consumablesToShow
-    if table and table.sort then
-        table.sort(consumablesToShow, SortConsumables)
-    else
-        -- Implement a simple bubble sort if table.sort is unavailable
-        local n = GetTableLength(consumablesToShow)
-        for i = 1, n - 1 do
-            for j = 1, n - i do
-                if not SortConsumables(consumablesToShow[j], consumablesToShow[j + 1]) then
-                    -- Swap
-                    consumablesToShow[j], consumablesToShow[j + 1] = consumablesToShow[j + 1], consumablesToShow[j]
-                end
-            end
-        end
-    end
-
-    -- Initialize variables for display
-    local index = 0
-    local lineHeight = 18
-    local hasAnyVisibleItems = false
-
-    -- Get settings
-    local enableCategories = ConsumesManager_Options.enableCategories or false
-    local showUseButton = ConsumesManager_Options.showUseButton or false
-
-    if enableCategories then
-        -- Group consumables by category
-        local categories = {}
-        local consumablesToShowLength = GetTableLength(consumablesToShow)
-        for i = 1, consumablesToShowLength do
-            local consumable = consumablesToShow[i]
-            local category = consumable.category or "Uncategorized"
-            if not categories[category] then
-                categories[category] = {}
-            end
-            table.insert(categories[category], consumable)
-        end
-
-        -- Sort category names alphabetically
-        local sortedCategoryNames = {}
-        for categoryName in pairs(categories) do
-            table.insert(sortedCategoryNames, categoryName)
-        end
-        if table and table.sort then
-            table.sort(sortedCategoryNames)
-        else
-            -- Simple bubble sort if table.sort is unavailable
-            local n = GetTableLength(sortedCategoryNames)
-            for i = 1, n - 1 do
-                for j = 1, n - i do
-                    if sortedCategoryNames[j] > sortedCategoryNames[j + 1] then
-                        sortedCategoryNames[j], sortedCategoryNames[j + 1] = sortedCategoryNames[j + 1], sortedCategoryNames[j]
-                    end
-                end
-            end
-        end
-
-        -- Iterate over each category
-        local sortedCategoryNamesLength = GetTableLength(sortedCategoryNames)
-        for i = 1, sortedCategoryNamesLength do
-            local categoryName = sortedCategoryNames[i]
-            local items = categories[categoryName]
-
-            if items and GetTableLength(items) > 0 then
-                -- Create and display category label
-                index = index + 1
-                local categoryFrame = CreateFrame("Frame", "ConsumesManager_CategoryFrame" .. index, scrollChild)
-                categoryFrame:SetWidth(scrollChild:GetWidth() - 10)
-                categoryFrame:SetHeight(lineHeight)
-                categoryFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - ((index - 1) * lineHeight))
-                categoryFrame:Show()
-
-                local categoryLabel = categoryFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-                categoryLabel:SetPoint("LEFT", categoryFrame, "LEFT", 0, 0)
-                categoryLabel:SetText(categoryName)
-                categoryLabel:SetJustifyH("LEFT")
-                categoryLabel:SetTextColor(1, 1, 1)
-
-
-                -- Store the category frame
-                table.insert(parentFrame.presetsConsumables, {
-                    frame = categoryFrame,
-                    label = categoryLabel,
-                    isCategory = true
-                })
-
-                -- Increment index for items under the category
-                index = index + 1
-
-                -- Sort items within the category
-                if table and table.sort then
-                    table.sort(items, SortConsumables)
-                else
-                    -- Simple bubble sort if table.sort is unavailable
-                    local m = GetTableLength(items)
-                    for p = 1, m - 1 do
-                        for q = 1, m - p do
-                            if not SortConsumables(items[q], items[q + 1]) then
-                                items[q], items[q + 1] = items[q + 1], items[q]
-                            end
-                        end
-                    end
-                end
-
-                -- Iterate through each consumable in the category
-                local itemsLength = GetTableLength(items)
-                for j = 1, itemsLength do
-                    local consumable = items[j]
-                    if consumable then
-                        -- Create consumable frame
-                        local frame = CreateFrame("Frame", "ConsumesManager_PresetsConsumableFrame" .. index, scrollChild)
-                        frame:SetWidth(scrollChild:GetWidth() - 10)
-                        frame:SetHeight(lineHeight)
-                        frame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, - ((index - 1) * lineHeight))
-                        frame:Show()
-                        frame:EnableMouse(true)  -- Enable mouse for tooltip
-
-                        -- Create "Use" button if enabled
-                        local useButton = nil
-                        if showUseButton then
-                            useButton = CreateFrame("Button", "ConsumesManager_PresetsUseButton" .. index, frame, "UIPanelButtonTemplate")
-                            useButton:SetWidth(40)
-                            useButton:SetHeight(16)
-                            useButton:SetPoint("LEFT", frame, "LEFT", 0, 0)
-                            useButton:SetText("Use")
-                            useButton:SetScript("OnClick", function()
-                                local bag, slot = ConsumesManager_FindItemInBags(consumable.id)
-                                if bag and slot then
-                                    UseContainerItem(bag, slot)
-                                else
-                                    DEFAULT_CHAT_FRAME:AddMessage("Item not found in bags.")
-                                end
-                            end)
-                        end
-
-                        -- Create label with count
-                        local label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-                        if showUseButton and useButton then
-                            label:SetPoint("LEFT", useButton, "RIGHT", 4, 0)
-                        else
-                            label:SetPoint("LEFT", frame, "LEFT", 0, 0)
-                        end
-                        label:SetText(consumable.name .. " (" .. consumable.totalCount .. ")")
-                        label:SetJustifyH("LEFT")
-
-                        -- Adjust label color based on count
-                        if consumable.totalCount == 0 then
-                            label:SetTextColor(1, 0, 0) -- Red
-                        elseif consumable.totalCount < 10 then
-                            label:SetTextColor(1, 0.4, 0) -- Orange
-                        elseif consumable.totalCount <= 20 then
-                            label:SetTextColor(1, 0.85, 0) -- Yellow
-                        else
-                            label:SetTextColor(0, 1, 0) -- Green
-                        end
-
-                        -- Tooltip handling
-                        frame:SetScript("OnEnter", function()
-                            ConsumesManager_ShowConsumableTooltip(consumable.id)
-                        end)
-                        frame:SetScript("OnLeave", function()
-                            if ConsumesManager_CustomTooltip and ConsumesManager_CustomTooltip.Hide then
-                                ConsumesManager_CustomTooltip:Hide()
-                            end
-                        end)
-
-                        -- Enable or disable "Use" button based on inventory
-                        if useButton then
-                            local playerInventory = (ConsumesManager_Data[realmName] and 
-                                                   ConsumesManager_Data[realmName][playerName] and 
-                                                   ConsumesManager_Data[realmName][playerName].inventory) or {}
-                            local countInInventory = playerInventory[consumable.id] or 0
-
-                            if countInInventory > 0 then
-                                useButton:Enable()
-                            else
-                                useButton:Disable()
-                            end
-                        end
-
-                        -- Store the consumable frame
-                        table.insert(parentFrame.presetsConsumables, {
-                            frame = frame,
-                            label = label,
-                            useButton = useButton,
-                            id = consumable.id
-                        })
-
-                        index = index + 1
-                        hasAnyVisibleItems = true
-                    end
-                end
-                
-            end
-        end
-    else
-        -- Categories are disabled; display all consumables in a single list
-        local consumablesToShowLength = GetTableLength(consumablesToShow)
-        for i = 1, consumablesToShowLength do
-            local consumable = consumablesToShow[i]
-            if consumable then
-                -- Create consumable frame
-                index = index + 1
-
-                local frame = CreateFrame("Frame", "ConsumesManager_PresetsConsumableFrame" .. index, scrollChild)
-                frame:SetWidth(scrollChild:GetWidth() - 10)
-                frame:SetHeight(lineHeight)
-                frame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 5, - ((index - 1) * lineHeight))
-                frame:Show()
-                frame:EnableMouse(true)  -- Enable mouse for tooltip
-
-                -- Create "Use" button if enabled
-                local useButton = nil
-                if showUseButton then
-                    useButton = CreateFrame("Button", "ConsumesManager_PresetsUseButton" .. index, frame, "UIPanelButtonTemplate")
-                    useButton:SetWidth(40)
-                    useButton:SetHeight(16)
-                    useButton:SetPoint("LEFT", frame, "LEFT", 0, 0)
-                    useButton:SetText("Use")
-                    useButton:SetScript("OnClick", function()
-                        local bag, slot = ConsumesManager_FindItemInBags(consumable.id)
-                        if bag and slot then
-                            UseContainerItem(bag, slot)
-                        else
-                            DEFAULT_CHAT_FRAME:AddMessage("Item not found in bags.")
-                        end
-                    end)
-                end
-
-                -- Create label with count
-                local label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-                if showUseButton and useButton then
-                    label:SetPoint("LEFT", useButton, "RIGHT", 4, 0)
-                else
-                    label:SetPoint("LEFT", frame, "LEFT", 0, 0)
-                end
-                label:SetText(consumable.name .. " (" .. consumable.totalCount .. ")")
-                label:SetJustifyH("LEFT")
-
-                -- Adjust label color based on count
-                if consumable.totalCount == 0 then
-                    label:SetTextColor(1, 0, 0) -- Red
-                elseif consumable.totalCount < 10 then
-                    label:SetTextColor(1, 0.4, 0) -- Orange
-                elseif consumable.totalCount <= 20 then
-                    label:SetTextColor(1, 0.85, 0) -- Yellow
-                else
-                    label:SetTextColor(0, 1, 0) -- Green
-                end
-
-                -- Tooltip handling
-                frame:SetScript("OnEnter", function()
-                    ConsumesManager_ShowConsumableTooltip(consumable.id)
-                end)
-                frame:SetScript("OnLeave", function()
-                    if ConsumesManager_CustomTooltip and ConsumesManager_CustomTooltip.Hide then
-                        ConsumesManager_CustomTooltip:Hide()
-                    end
-                end)
-
-                -- Enable or disable "Use" button based on inventory
-                if useButton then
-                    local playerInventory = (ConsumesManager_Data[realmName] and 
-                                           ConsumesManager_Data[realmName][playerName] and 
-                                           ConsumesManager_Data[realmName][playerName].inventory) or {}
-                    local countInInventory = playerInventory[consumable.id] or 0
-
-                    if countInInventory > 0 then
-                        useButton:Enable()
-                    else
-                        useButton:Disable()
-                    end
-                end
-
-                -- Store the consumable frame
-                table.insert(parentFrame.presetsConsumables, {
-                    frame = frame,
-                    label = label,
-                    useButton = useButton,
-                    id = consumable.id
-                })
-
-               
-                hasAnyVisibleItems = true
-            end
-        end
-    end
-
-    -- Adjust the scroll child height based on the number of items
-    scrollChild:SetHeight(index * lineHeight + 40)
-
-    -- Show sorting order buttons
-    parentFrame.orderByNameButton:Show()
-    parentFrame.orderByAmountButton:Show()
-
-    -- Update the scrollbar to reflect new content
-    ConsumesManager_UpdatePresetsScrollBar()
-
-    -- Handle the case where no consumables are visible
-    if not hasAnyVisibleItems then
-        -- Create and show a "No consumables available" message if it doesn't exist
-        if not parentFrame.noItemsMessage then
-            parentFrame.noItemsMessage = parentFrame.messageLabel
-            
-            parentFrame.noItemsMessage:SetText("|cffff0000This preset is not available yet.|r")
-
-            parentFrame.orderByNameButton:Hide()
-            parentFrame.orderByAmountButton:Hide()
-
-
-        end
-        parentFrame.noItemsMessage:Show()
-    else
-        -- Hide the message if it exists
-        if parentFrame.noItemsMessage then
-            parentFrame.noItemsMessage:Hide()
-        end
-
-    end
-end
-
-function ConsumesManager_IsItemInPresets(itemID)
-    for className, presets in pairs(classPresets) do
-        for _, preset in ipairs(presets) do
-            for _, id in ipairs(preset.id) do
-                if id == itemID then
-                    return true
-                end
-            end
-        end
-    end
-    return false
-end
-
 
 
 -- Settings Window -----------------------------------------------------------------------------------
@@ -2641,7 +2351,7 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
             ConsumesManager_Options.enableCategories = false 
         end
         ConsumesManager_UpdateManagerContent()
-        ConsumesManager_UpdatePresetsConsumables()
+        ConsumesManager_UpdatePresetsContent()
     end)
 
     local enableCategoriesLabel = enableCategoriesFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -2678,7 +2388,7 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
             ConsumesManager_Options.showUseButton = false 
         end
         ConsumesManager_UpdateManagerContent()
-        ConsumesManager_UpdatePresetsConsumables()
+        ConsumesManager_UpdatePresetsContent()
     end)
 
     local showUseButtonLabel = showUseButtonFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -3001,7 +2711,8 @@ function ConsumesManager_CreateSettingsContent(parentFrame)
         joinChannelButton:SetAlpha(0.5)
 
 
-        local delayFrame = CreateFrame("Frame")
+        local delayFrame = ConsumesManager_ChannelFrame.delayFrameJoin or CreateFrame("Frame")
+        ConsumesManager_ChannelFrame.delayFrameJoin = delayFrame
         delayFrame:Show()
         local elapsed = 0
         local delay = 5
@@ -3319,7 +3030,7 @@ end
 
 function ConsumesManager_UpdateAllContent()
     ConsumesManager_UpdateManagerContent()
-    ConsumesManager_UpdatePresetsConsumables()
+    ConsumesManager_UpdatePresetsContent()
     ConsumesManager_UpdateSettingsContent()
 end
 
@@ -3359,38 +3070,15 @@ function ConsumesManager_EnableTab(tab)
     tab:SetScript("OnLeave", HideTooltip)
 end
 
-function ConsumesManager_CheckBankAndMailScanned()
-    local realmName = GetRealmName()
-    local playerName = UnitName("player")
-
-    -- Ensure data structure exists
-    if not ConsumesManager_Data[realmName] or not ConsumesManager_Data[realmName][playerName] then
-        return false, false
-    end
-    
-    local currentCharData = ConsumesManager_Data[realmName][playerName]
-    
-    local bankScanned = currentCharData["bank"] ~= nil
-    local mailScanned = currentCharData["mail"] ~= nil
-
-    return bankScanned, mailScanned
-end
-
-
 function ConsumesManager_UpdateTabStates()
     if not ConsumesManager_Tabs or not ConsumesManager_Tabs[2] or not ConsumesManager_Tabs[3] then
         -- Tabs have not been created yet; exit the function
         return
     end
 
-    local bankScanned, mailScanned = ConsumesManager_CheckBankAndMailScanned()
-    if bankScanned and mailScanned then
-        ConsumesManager_EnableTab(ConsumesManager_Tabs[2])  -- Items Tab
-        ConsumesManager_EnableTab(ConsumesManager_Tabs[3])  -- Presets Tab
-    else
-        ConsumesManager_DisableTab(ConsumesManager_Tabs[2])  -- Items Tab
-        ConsumesManager_DisableTab(ConsumesManager_Tabs[3])  -- Presets Tab
-    end
+    -- Items and Presets tabs are always enabled (they don't require scan data)
+    ConsumesManager_EnableTab(ConsumesManager_Tabs[2])  -- Items Tab
+    ConsumesManager_EnableTab(ConsumesManager_Tabs[3])  -- Presets Tab
 end
 
 function MultiAccountInfoPopup()
@@ -3460,8 +3148,8 @@ end
 
 -- Tooltip Functions  --------------------------------------------------------------------------------------
 function ConsumesManager_ShowConsumableTooltip(itemID)
-    -- Ensure item is enabled in settings or part of presets
-    if not ConsumesManager_SelectedItems[itemID] and not ConsumesManager_IsItemInPresets(itemID) then
+    -- Ensure item is enabled in settings
+    if not ConsumesManager_SelectedItems[itemID] then
         return
     end
 
@@ -3786,7 +3474,8 @@ end
 
 -- Scan Functions ---------------------------------------------------------------------------------------
 function ConsumesManager_ScanPlayerInventory()
-    local delayFrameInv = CreateFrame("Frame")
+    local delayFrameInv = ConsumesManager_EventFrame.delayFrameInv or CreateFrame("Frame")
+    ConsumesManager_EventFrame.delayFrameInv = delayFrameInv
     local delayStartTime = GetTime()
     local delay = 0.5
 
@@ -3845,7 +3534,8 @@ end
 function ConsumesManager_ScanPlayerBank()
     if not isBankOpen then return end
 
-    local delayFrameBank = CreateFrame("Frame")
+    local delayFrameBank = ConsumesManager_EventFrame.delayFrameBank or CreateFrame("Frame")
+    ConsumesManager_EventFrame.delayFrameBank = delayFrameBank
     local delayStartTime = GetTime()
     local delay = 0.5
 
@@ -3912,7 +3602,8 @@ end
 function ConsumesManager_ScanPlayerMail()
     if not isMailOpen then return end
 
-    local delayFrameMail = CreateFrame("Frame")
+    local delayFrameMail = ConsumesManager_EventFrame.delayFrameMail or CreateFrame("Frame")
+    ConsumesManager_EventFrame.delayFrameMail = delayFrameMail
     local delayStartTime = GetTime()
     local delay = 0.5
 
