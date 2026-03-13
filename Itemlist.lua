@@ -84,7 +84,7 @@ consumablesCategories = {
         { id = 3823, name = "Lesser Invisibility Potion", mats = {"1x Fadeleaf", "1x Wild Steelbloom", "1x Leaded Vial"}, texture = "Interface\\Icons\\inv_potion_18", description = " Gives the imbiber lesser invisibility for 15 sec." }
     },
     ["Food Buffs"] = {
-        { id = 21023, name = "Dirge's Kickin' Chimaerok Chops", mats = {"1x Hot Spices", "1x Goblin Rocket Fuel", "1x Deeprock Salt", "1x Chimaerok Tenderloin"}, texture = "Interface\\Icons\\INV_Misc_Food_65", description = "Increases Strength by 25 for 1 hour." },
+        { id = 21023, name = "Dirge's Kickin' Chimaerok Chops", mats = {"1x Hot Spices", "1x Goblin Rocket Fuel", "1x Deeprock Salt", "1x Chimaerok Tenderloin"}, texture = "Interface\\Icons\\INV_Misc_Food_65", description = "Increases Stamina by 25 for 1 hour." },
         { id = 18254, name = "Runn Tum Tuber Surprise", mats = {"1x Runn Tum Tuber", "1 Soothing Spices"}, texture = "Interface\\Icons\\INV_Misc_Food_63", description = "Increases Intellect by 10 for 1 hour." },
         { id = 13931, name = "Nightfin Soup", mats = {"1x Raw Nightfin Snapper", "1x Refreshing Spring Water"}, texture = "Interface\\Icons\\INV_Drink_17", description = "Restores 8 mana every 5 seconds for 1 hour." },
         { id = 20452, name = "Smoked Desert Dumplings", mats = {"1x Sandworm Meat", "1x Soothing Spices"}, texture = "Interface\\Icons\\INV_Misc_Food_64", description = "Increases Strength by 20 for 1 hour." },
