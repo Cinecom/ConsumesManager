@@ -53,7 +53,8 @@ consumablesCategories = {
         { id = 10922, name = "Wound Poison IV", mats = {"2x Essence of Agony", "2x Deathweed", "1x Crystal Vial"}, texture = "Interface\\Icons\\Ability_PoisonSting", description = "30% chance of poisoning the enemy, reducing all healing effects used on them by 135 for 15 sec. Stacks up to 5 times on a single target." },
         { id = 12643, name = "Dense Weightstone", mats = {"1x Dense Stone", "1x Runecloth"}, texture = "Interface\\Icons\\INV_stone_weightstone_05", description = "Increase the damage of a blunt weapon by 8 for 30 minutes." },
         { id = 47409, name = "Corrosive Poison II", mats = {"3x Dust of Deterioration", "3x Deathweed", "1x Crystal Vial"}, texture = "Interface\\Icons\\inv_corrosive_01", description = "30% chance of poisoning the enemy for 128 damage over 12 sec. Stacks up to 5 times on a single target." },
-        { id = 54010, name = "Dissolvent Poison II", mats = {"3x Dust of Deterioration", "4x Maiden's Anguish", "1x Crystal Vial"}, texture = "Interface\\Icons\\Spell_Nature_Slowpoison", description = "20% chance to inflict 106 to 143 damage. This damage ignores armor." }
+        { id = 54010, name = "Dissolvent Poison II", mats = {"3x Dust of Deterioration", "4x Maiden's Anguish", "1x Crystal Vial"}, texture = "Interface\\Icons\\Spell_Nature_Slowpoison", description = "20% chance to inflict 106 to 143 damage. This damage ignores armor." },
+        { id = 65032, name = "Agitating Poison", mats = {"2x Maiden's Anguish", "1x Leaded Vial"}, texture = "Interface\\Icons\\spell_nature_nullifypoison", description = "20% chance to inflict 67 to 86 Nature damage, and cause extra threat." }
     },
     ["Combat Potions"] = {
         { id = 13455, name = "Greater Stoneshield Potion", mats = {"3x Stonescale Oil", "1x Thorium Ore", "1x Crystal Vial"}, texture = "Interface\\Icons\\INV_Potion_69", description = "Increases armor by 2000 for 2 minutes." },
